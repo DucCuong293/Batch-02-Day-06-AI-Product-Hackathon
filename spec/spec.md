@@ -1,6 +1,7 @@
 # Yumi - Product SPEC
 
-**Lớp:** E402  
+**Lớp:** E402
+
 **Nhóm:** A5
 
 ## 1. Vấn đề, người dùng và bằng chứng

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yumi — AI Food Agent | Gợi ý món ăn thông minh</title>
+  <meta name="description" content="Trợ lý AI gợi ý món ăn theo ngữ cảnh: thời tiết, tâm trạng, budget, dinh dưỡng. Dành cho sinh viên và dân văn phòng Hà Nội." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- ═══ Header ═══ -->
+    <header class="app-header" id="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">🍜</div>
+        <div>
+          <h1>Yumi</h1>
+          <p class="header-sub">AI Food Agent — Gợi ý món ăn thông minh</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <select id="llm-provider" class="header-select" aria-label="Chọn LLM Provider">
+          <option value="openai" selected>OpenAI</option>
+          <option value="gemini">Gemini</option>
+        </select>
+        <select id="llm-model" class="header-select" aria-label="Chọn LLM Model">
+          <!-- Dynamic options -->
+        </select>
+        <button id="btn-reset" class="btn-icon" title="Làm mới cuộc trò chuyện" aria-label="Reset">↻</button>
+      </div>
+    </header>
+
+    <!-- ═══ Context Bar ═══ -->
+    <div class="context-bar" id="context-bar">
+      <div class="context-item" id="ctx-weather">
+        <span class="ctx-icon">⏳</span>
+        <span class="ctx-text">Đang tải thời tiết...</span>
+      </div>
+      <div class="context-item" id="ctx-location" title="Nhấn để cập nhật vị trí hiện tại">
+        <span class="ctx-icon">📍</span>
+        <span class="ctx-text">Gia Lâm, Hà Nội</span>
+      </div>
+      <div class="context-item" id="ctx-time">
+        <span class="ctx-icon">🕐</span>
+        <span class="ctx-text">--:--</span>
+      </div>
+    </div>
+
+    <!-- ═══ Main Content ═══ -->
+    <main class="main-content">
+      <!-- Chat Panel -->
+      <section class="chat-panel" aria-label="Khu vực chat">
+        <div class="message-list" id="message-list" aria-live="polite"></div>
+
+        <!-- Mood Selector -->
+        <div class="mood-bar" id="mood-bar">
+          <span class="mood-label">Tâm trạng:</span>
+          <button class="mood-chip" data-mood="vui">😊 Vui vẻ</button>
+          <button class="mood-chip" data-mood="mệt">😫 Mệt mỏi</button>
+          <button class="mood-chip" data-mood="buồn">😢 Buồn</button>
+          <button class="mood-chip" data-mood="stress">😤 Stress</button>
+          <button class="mood-chip" data-mood="bình thường">😌 Bình thường</button>
+        </div>
+
+        <!-- Chat Input -->
+        <form class="chat-form" id="chat-form">
+          <input
+            id="chat-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Nhắn Yumi: 'ăn gì dưới 60k', 'trời mưa muốn ăn phở'..."
+            aria-label="Tin nhắn"
+          />
+          <button type="submit" id="btn-send" aria-label="Gửi">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"/>
+            </svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- Results Panel -->
+      <aside class="results-panel" id="results-panel" aria-label="Kết quả gợi ý">
+        <div class="results-header">
+          <h2>Gợi ý cho bạn</h2>
+          <span class="results-badge" id="results-badge">0 kết quả</span>
+        </div>
+        <div class="results-list" id="results-list">
+          <div class="results-empty">
+            <div class="empty-icon">🍽️</div>
+            <p>Nhắn tin cho Yumi để nhận gợi ý món ăn phù hợp nhé!</p>
+            <div class="quick-starts">
+              <button class="quick-btn" data-message="Ăn gì giờ?">🍜 Ăn gì giờ?</button>
+              <button class="quick-btn" data-message="Có gì dưới 50k?">💰 Dưới 50k</button>
+              <button class="quick-btn" data-message="Trời mưa ăn gì ngon?">🌧️ Trời mưa</button>
+              <button class="quick-btn" data-message="Muốn ăn healthy">🥗 Healthy</button>
+              <button class="quick-btn" data-message="Buồn quá muốn ăn gì ngọt">😢 Comfort food</button>
+              <button class="quick-btn" data-message="Đang stress muốn ăn cay">😤 Ăn cay</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

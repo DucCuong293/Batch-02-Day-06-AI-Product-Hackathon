@@ -8,7 +8,11 @@ from copy import deepcopy
 import httpx
 
 from config import GEOAPIFY_API_KEY, GOOGLE_PLACES_API_KEY, has_key
+from logging_config import get_logger
+from services.cache import places_cache, make_places_key
 from services.shipping import haversine_km, estimate_shipping_fee, estimate_delivery_time
+
+logger = get_logger("places")
 
 # ── Mock restaurant database — Quán thật khu vực Gia Lâm, HN ─────
 
@@ -371,15 +375,24 @@ async def search_restaurants(
     Tìm quán ăn gần vị trí user.
     Ưu tiên Geoapify, sau đó Google Places, cuối cùng dùng mock data.
     """
+    # Check cache
+    cache_key = make_places_key(lat, lon, keyword)
+    cached = places_cache.get(cache_key)
+    if cached is not None:
+        logger.debug(f"Places cache hit: {cache_key}")
+        return cached
+
     if has_key("GEOAPIFY_API_KEY"):
         try:
             results = await _fetch_geoapify_places(
                 lat, lon, keyword, radius_km, max_results
             )
             if results:
+                places_cache.set(cache_key, results)
+                logger.info(f"Places fetched from Geoapify: {len(results)} results for '{keyword}'")
                 return results
         except Exception as e:
-            print(f"[Places] Geoapify error, trying fallback: {e}")
+            logger.warning(f"Geoapify error, trying fallback: {e}")
 
     if has_key("GOOGLE_PLACES_API_KEY"):
         try:
@@ -387,11 +400,15 @@ async def search_restaurants(
                 lat, lon, keyword, radius_km, max_results
             )
             if results:
+                places_cache.set(cache_key, results)
+                logger.info(f"Places fetched from Google: {len(results)} results for '{keyword}'")
                 return results
         except Exception as e:
-            print(f"[Places] API error, falling back to mock: {e}")
+            logger.warning(f"Google Places error, falling back to mock: {e}")
 
-    return _search_mock(lat, lon, keyword, radius_km, max_results)
+    results = _search_mock(lat, lon, keyword, radius_km, max_results)
+    places_cache.set(cache_key, results)
+    return results
 
 
 async def _fetch_geoapify_places(

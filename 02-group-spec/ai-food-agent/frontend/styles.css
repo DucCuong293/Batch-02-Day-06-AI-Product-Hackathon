@@ -561,6 +561,23 @@ body {
 .btn-copy:hover { background: var(--teal); color: white; }
 .btn-copy.copied { background: var(--green); color: white; border-color: var(--green); }
 
+.btn-order {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  transition: var(--transition);
+}
+.btn-order:hover { background: var(--accent); color: white; box-shadow: var(--shadow-glow); }
+
 .card-score {
   font-size: 11px;
   color: var(--text-muted);

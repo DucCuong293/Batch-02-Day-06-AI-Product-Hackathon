@@ -9,6 +9,9 @@ import unicodedata
 import httpx
 
 from config import USDA_FDC_API_KEY, has_key
+from logging_config import get_logger
+
+logger = get_logger("nutrition")
 
 # ── Mock nutrition database — Món Việt phổ biến ──────
 
@@ -145,7 +148,7 @@ async def get_nutrition(food_name: str) -> dict:
             _NUTRITION_CACHE[cache_key] = result
             return dict(result)
         except Exception as e:
-            print(f"[Nutrition] USDA API error, backing off and using mock: {type(e).__name__}")
+            logger.warning(f"USDA API error, backing off and using mock: {type(e).__name__}")
             _API_UNAVAILABLE_UNTIL = time.monotonic() + _API_BACKOFF_SECONDS
 
     result = _lookup_mock(food_name)

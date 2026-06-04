@@ -8,6 +8,10 @@ from datetime import datetime
 import httpx
 
 from config import OPENWEATHERMAP_API_KEY, has_key
+from logging_config import get_logger
+from services.cache import weather_cache, make_weather_key
+
+logger = get_logger("weather")
 
 # ── Meal time helpers ────────────────────────────────
 
@@ -46,13 +50,25 @@ async def get_weather(lat: float, lon: float) -> dict:
     Lấy thời tiết hiện tại từ OpenWeatherMap.
     Trả về dict chuẩn hóa, fallback sang mock nếu không có key.
     """
+    # Check cache trước
+    cache_key = make_weather_key(lat, lon)
+    cached = weather_cache.get(cache_key)
+    if cached is not None:
+        logger.debug(f"Weather cache hit: {cache_key}")
+        return cached
+
     if has_key("OPENWEATHERMAP_API_KEY"):
         try:
-            return await _fetch_real_weather(lat, lon)
+            result = await _fetch_real_weather(lat, lon)
+            weather_cache.set(cache_key, result)
+            logger.info(f"Weather fetched from API: {result.get('description', 'N/A')}")
+            return result
         except Exception as e:
-            print(f"[Weather] API error, falling back to mock: {e}")
+            logger.warning(f"Weather API error, falling back to mock: {e}")
 
-    return _mock_weather()
+    result = _mock_weather()
+    weather_cache.set(cache_key, result)
+    return result
 
 
 async def _fetch_real_weather(lat: float, lon: float) -> dict:

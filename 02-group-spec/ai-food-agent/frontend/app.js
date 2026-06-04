@@ -179,13 +179,17 @@ async function fetchContext() {
     const data = await resp.json();
     state.weatherContext = data.weather;
 
+    const latStr = (state.location.lat !== null ? state.location.lat : data.location.lat).toFixed(4);
+    const lonStr = (state.location.lon !== null ? state.location.lon : data.location.lon).toFixed(4);
     if (state.location.source !== "gps") {
       state.location = {
         lat: data.location.lat,
         lon: data.location.lon,
         source: "default",
       };
-      updateLocationLabel(`${data.location.city} (mặc định)`);
+      updateLocationLabel(`${data.location.city} (${latStr}, ${lonStr}) (mặc định)`);
+    } else {
+      updateLocationLabel(`${data.location.city} (${latStr}, ${lonStr})`);
     }
 
     // Update context bar
@@ -431,6 +435,9 @@ function renderCard(item, type) {
           <button class="btn-copy" data-copy="${escapeHtml(item.restaurant_name)}">
             📋 Copy tên quán
           </button>
+          <button class="btn-order">
+            ⚡ Đặt món
+          </button>
         </div>
         <div class="card-score">Điểm phù hợp: ${item.score}/100</div>
       </div>
@@ -593,6 +600,12 @@ document.addEventListener("click", (e) => {
       copyBtn.classList.remove("copied");
       copyBtn.innerHTML = `📋 Copy tên quán`;
     }, 2000);
+  }
+
+  // Order button
+  const orderBtn = e.target.closest(".btn-order");
+  if (orderBtn) {
+    showToast("⚡ Tính năng Đặt món đang được triển khai — Kết nối trực tiếp với ShopeeFood/GrabFood!");
   }
 });
 

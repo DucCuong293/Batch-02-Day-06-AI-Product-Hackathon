@@ -6,7 +6,51 @@ from __future__ import annotations
 import unicodedata
 import re
 
+from logging_config import get_logger
 from services.shipping import haversine_km, estimate_shipping_fee, estimate_delivery_time
+from services.maps import attach_map_links
+
+logger = get_logger("scoring")
+
+
+# ── Allergy ingredient database ──────────────────────
+
+ALLERGY_INGREDIENT_MAP: dict[str, set[str]] = {
+    "tôm": {"tôm", "shrimp", "prawn"},
+    "cua": {"cua", "crab"},
+    "mực": {"mực", "squid"},
+    "ốc": {"ốc", "snail"},
+    "cá": {"cá", "fish", "cá hồi", "cá ngừ"},
+    "hải sản": {"hải sản", "seafood", "tôm", "cua", "mực", "ốc", "cá", "hàu", "sò"},
+    "đậu phộng": {"đậu phộng", "lạc", "peanut"},
+    "sữa": {"sữa", "phô mai", "cheese", "bơ", "cream", "milk"},
+    "gluten": {"gluten", "mì", "bánh mì", "bread", "wheat"},
+    "trứng": {"trứng", "egg"},
+    "đậu nành": {"đậu nành", "đậu hũ", "đậu phụ", "tofu", "tương"},
+    # Chay
+    "thịt": {"thịt", "gà", "bò", "heo", "lợn", "vịt", "meat", "pork", "chicken", "beef"},
+}
+
+
+def _item_contains_allergen(item_name: str, cuisine_tags: set[str], allergy_keywords: list[str]) -> bool:
+    """Kiểm tra xem món ăn có chứa thành phần gây dị ứng không."""
+    if not allergy_keywords:
+        return False
+
+    check_text = _normalize_text(f"{item_name} {' '.join(cuisine_tags)}")
+
+    for allergen in allergy_keywords:
+        allergen_lower = allergen.lower().strip()
+        # Check trực tiếp
+        if _contains_phrase(check_text, _normalize_text(allergen_lower)):
+            return True
+        # Check qua ingredient map
+        related_terms = ALLERGY_INGREDIENT_MAP.get(allergen_lower, set())
+        for term in related_terms:
+            if _contains_phrase(check_text, _normalize_text(term)):
+                return True
+
+    return False
 
 
 FOOD_FAMILY_TERMS = {
@@ -100,7 +144,8 @@ def score_restaurant_menu_item(
     weather_tags: list[str] | None = None,
     meal_tags: list[str] | None = None,
     mood_tags: list[str] | None = None,
-) -> dict:
+    allergy_keywords: list[str] | None = None,
+) -> dict | None:
     """
     Chấm điểm 1 cặp (quán, món) theo 5 tiêu chí.
 
@@ -112,6 +157,14 @@ def score_restaurant_menu_item(
     weather_tags = weather_tags or []
     meal_tags = meal_tags or []
     mood_tags = mood_tags or []
+    allergy_keywords = allergy_keywords or []
+
+    # ── Allergy filter — skip nếu chứa allergen ──────
+    r_tags = set(restaurant.get("cuisine_tags", []))
+    if allergy_keywords and _item_contains_allergen(
+        menu_item["name"], r_tags, allergy_keywords
+    ):
+        return None  # Bỏ qua món có chứa allergen
 
     dist = restaurant.get("distance_km")
     if dist is None:
@@ -123,7 +176,6 @@ def score_restaurant_menu_item(
 
     # ── 1. Food Match Score (0-100) ──────────────────
     food_score = 0
-    r_tags = set(restaurant.get("cuisine_tags", []))
     r_meal_tags = set(restaurant.get("meal_tags", []))
     item_name_lower = menu_item["name"].lower()
 
@@ -266,6 +318,7 @@ def rank_and_select_backup(
     mood_tags: list[str] | None = None,
     rejected_items: list[str] | None = None,
     rejected_restaurants: list[str] | None = None,
+    allergy_keywords: list[str] | None = None,
 ) -> dict:
     """
     Chấm điểm tất cả (quán, món) pairs → chọn quán chính + 2-3 backup.
@@ -311,8 +364,10 @@ def rank_and_select_backup(
                 weather_tags=weather_tags,
                 meal_tags=meal_tags,
                 mood_tags=mood_tags,
+                allergy_keywords=allergy_keywords,
             )
-            all_scored.append(scored)
+            if scored is not None:  # None = filtered by allergy
+                all_scored.append(scored)
 
     if not all_scored:
         return {"primary": None, "backups": [], "all_scored": []}
@@ -383,6 +438,16 @@ def rank_and_select_backup(
         "Đúng món bạn yêu cầu và có điểm tổng thể tốt nhất"
         if primary["specific_food_match"]
         else "Phù hợp nhất với yêu cầu của bạn"
+    )
+
+    # ── Attach map links ─────────────────────────────
+    attach_map_links(primary, user_lat, user_lon)
+    for backup in backups:
+        attach_map_links(backup, user_lat, user_lon)
+
+    logger.info(
+        f"Scored {len(all_scored)} items, primary: {primary['item_name']} "
+        f"at {primary['restaurant_name']} (score={primary['score']})"
     )
 
     return {

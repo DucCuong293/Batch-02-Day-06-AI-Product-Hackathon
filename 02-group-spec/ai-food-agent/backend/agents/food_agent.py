@@ -15,11 +15,27 @@ from config import (
     DEFAULT_LAT, DEFAULT_LON,
     has_key,
 )
+from logging_config import get_logger
 from agents.prompts import SYSTEM_PROMPT, CORRECTION_PROMPT
+from agents.guardrails import (
+    is_prompt_injection,
+    is_out_of_scope,
+    sanitize_message,
+    validate_conversation_history,
+    extract_allergies,
+    contains_allergy_mention,
+    OUT_OF_SCOPE_RESPONSE,
+    INJECTION_BLOCKED_RESPONSE,
+)
 from services.weather import get_weather
 from services.places import search_restaurants, get_all_mock_restaurants
 from services.nutrition import get_nutrition
 from services.scoring import is_specific_food_keyword, rank_and_select_backup
+
+logger = get_logger("food_agent")
+
+# Timeout cho toàn bộ process_chat (giây)
+PROCESS_CHAT_TIMEOUT = 30
 
 
 FOOD_KEYWORDS = [
@@ -57,8 +73,35 @@ async def process_chat(
     lon = DEFAULT_LON if user_lon is None else user_lon
     provider = provider or LLM_PROVIDER
     model = model or LLM_MODEL
-    conversation_history = _sanitize_history(conversation_history or [], message)
     session_preferences = dict(session_preferences or {})
+
+    # ── 0. Guardrails — sanitize & validate ──────────
+    message = sanitize_message(message)
+    logger.info(f"Processing chat: '{message[:80]}...'" if len(message) > 80 else f"Processing chat: '{message}'")
+
+    # Check prompt injection
+    if is_prompt_injection(message):
+        logger.warning(f"Blocked prompt injection: {message[:100]}")
+        return {**INJECTION_BLOCKED_RESPONSE, "session_preferences": session_preferences}
+
+    # Check out-of-scope
+    if is_out_of_scope(message):
+        logger.info(f"Blocked out-of-scope: {message[:100]}")
+        return {**OUT_OF_SCOPE_RESPONSE, "session_preferences": session_preferences}
+
+    # Validate conversation history
+    conversation_history = validate_conversation_history(conversation_history or [])
+    conversation_history = _sanitize_history(conversation_history, message)
+
+    # Extract allergies
+    if contains_allergy_mention(message):
+        new_allergies = extract_allergies(message, session_preferences)
+        if new_allergies:
+            existing = set(session_preferences.get("allergies", []))
+            existing.update(new_allergies)
+            session_preferences["allergies"] = sorted(existing)
+            logger.info(f"Allergies updated: {session_preferences['allergies']}")
+
     correction = _apply_correction_preferences(message, session_preferences)
 
     # ── 1. Get weather context ───────────────────────
@@ -155,6 +198,7 @@ async def process_chat(
             mood_tags=list(dict.fromkeys(_mood_to_tags(mood, dietary) + override_tags)),
             rejected_items=session_preferences.get("rejected_items", []),
             rejected_restaurants=session_preferences.get("rejected_restaurants", []),
+            allergy_keywords=session_preferences.get("allergies", []),
         )
         _remember_suggestions(session_preferences, suggestions, parsed_keywords)
         if not suggestions.get("primary"):
@@ -617,6 +661,7 @@ async def _get_scored_suggestions(
     mood_tags: list[str],
     rejected_items: list[str] | None = None,
     rejected_restaurants: list[str] | None = None,
+    allergy_keywords: list[str] | None = None,
 ) -> dict:
     """Lấy quán, chấm điểm, chọn primary + backup."""
     # Tìm theo món trước để yêu cầu cụ thể không bị mất vì giới hạn quán gần nhất.
@@ -656,6 +701,7 @@ async def _get_scored_suggestions(
         mood_tags=mood_tags,
         rejected_items=rejected_items,
         rejected_restaurants=rejected_restaurants,
+        allergy_keywords=allergy_keywords,
     )
 
     # Thêm nutrition song song cho primary + backups.

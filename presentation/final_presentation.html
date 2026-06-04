@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yumi — AI Food Agent Presentation Deck</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#F97316',   /* ShopeeFood Orange */
+                            green: '#10B981',    /* Healthy Green */
+                            cream: '#FDFBF7',    /* Soft Cream BG */
+                            charcoal: '#1C1917'  /* Dark Stone Text */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FDFBF7;
+            color: #1C1917;
+            overflow: hidden;
+        }
+        .slide-transition {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Custom scrollbar for presenter notes */
+        .notes-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .notes-scrollbar::-webkit-scrollbar-track {
+            background: #F5F5F4;
+        }
+        .notes-scrollbar::-webkit-scrollbar-thumb {
+            background: #D6D3D1;
+            border-radius: 3px;
+        }
+        .notes-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #A8A29E;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between select-none">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 px-8 border-b border-stone-200/80 bg-white/80 backdrop-blur-md flex items-center justify-between z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="h-8 w-8 rounded-lg bg-brand-orange flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-brand-orange/20">
+                Y
+            </div>
+            <div>
+                <h1 class="text-xs font-bold uppercase tracking-wider text-stone-400">VinUni AI Hackathon - Nhóm Cường</h1>
+                <p class="text-sm font-semibold text-brand-charcoal">Yumi — AI Food Agent</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Indicator of Presenter Mode Status -->
+            <span id="mode-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-500 flex items-center gap-1.5 transition-all">
+                <span class="h-1.5 w-1.5 rounded-full bg-stone-400"></span> Chế độ trình chiếu sạch
+            </span>
+            <button id="toggle-presenter-btn" class="px-4 py-1.5 rounded-xl border border-stone-200 hover:border-brand-orange hover:bg-brand-cream text-sm font-semibold text-stone-700 hover:text-brand-orange flex items-center gap-2 transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span>Kịch bản (S)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace (Slides & Optional Speaker Sidebar) -->
+    <main class="flex-grow flex relative overflow-hidden">
+        <!-- Slides Area -->
+        <div id="slides-viewport" class="flex-grow h-full flex items-center justify-center p-8 transition-all duration-500">
+            <div class="w-full max-w-5xl h-[80vh] relative">
+                
+                <!-- Slide 1: Cover Page -->
+                <div id="slide-1" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-start">
+                        <span class="px-4 py-1.5 rounded-full bg-brand-orange/10 text-brand-orange font-bold text-xs uppercase tracking-wider">💡 Đề án Hackathon</span>
+                        <span class="text-stone-300 font-bold text-5xl">01</span>
+                    </div>
+                    <div class="my-auto space-y-6">
+                        <div class="space-y-3">
+                            <h2 class="text-4xl md:text-5xl font-extrabold text-stone-900 tracking-tight leading-tight">
+                                Yumi — AI Food Agent
+                            </h2>
+                            <p class="text-lg text-stone-500 max-w-2xl font-medium">
+                                Trợ lý gợi ý món ăn thông minh theo ngữ cảnh (Thời tiết, Tâm trạng, Địa điểm & Dinh dưỡng)
+                            </p>
+                        </div>
+                        <div class="h-1 w-24 bg-brand-orange rounded"></div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end border-t border-stone-100 pt-6">
+                        <p class="text-xs font-semibold text-stone-400">DAY 05 & DAY 06 • PITCHING DECK</p>
+                    </div>
+                </div>
+
+                <!-- Slide 2: Problem Statement -->
+                <div id="slide-2" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Bài toán thực tế (Problem Statement)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">02</span>
+                    </div>
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Issue 1 -->
+                        <div class="bg-brand-cream border border-stone-200/60 rounded-2xl p-6 flex flex-col justify-between h-full hover:border-brand-orange/40 transition-all">
+                            <div class="space-y-3">
+                                <div class="text-2xl">⚡</div>
+                                <h3 class="font-extrabold text-stone-850 text-sm">Quá tải thông tin (Choice Overload)</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">Hàng trăm quán ăn lộn xộn khiến người dùng bối rối, mất từ 15-30 phút mỗi ngày chỉ để lướt app vô định để tìm món.</p>
+                            </div>
+                            <span class="mt-4 inline-block text-[9px] font-bold text-brand-orange uppercase bg-white border border-stone-100 px-2 py-1 rounded self-start">Self-use #1, #3</span>
+                        </div>
+                        <!-- Issue 2 -->
+                        <div class="bg-brand-cream border border-stone-200/60 rounded-2xl p-6 flex flex-col justify-between h-full hover:border-brand-orange/40 transition-all">
+                            <div class="space-y-3">
+                                <div class="text-2xl">🌦️</div>
+                                <h3 class="font-extrabold text-stone-850 text-sm">Gợi ý mù bối cảnh</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">Thuật toán chỉ chú trọng quảng cáo trả phí, bỏ qua thời tiết nắng/mưa ngoài trời, tâm trạng bên trong hay yếu tố dị ứng.</p>
+                            </div>
+                            <span class="mt-4 inline-block text-[9px] font-bold text-brand-orange uppercase bg-white border border-stone-100 px-2 py-1 rounded self-start">Self-use #2, #5, #6</span>
+                        </div>
+                        <!-- Issue 3 -->
+                        <div class="bg-brand-cream border border-stone-200/60 rounded-2xl p-6 flex flex-col justify-between h-full hover:border-brand-orange/40 transition-all">
+                            <div class="space-y-3">
+                                <div class="text-2xl">💸</div>
+                                <h3 class="font-extrabold text-stone-850 text-sm">Phí ship "thổi bay" ngân sách</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">App gợi ý món ăn nằm trong budget nhưng quán quá xa khiến phí ship thực tế tăng cao dội tổng đơn vượt xa khả năng chi tiêu.</p>
+                            </div>
+                            <span class="mt-4 inline-block text-[9px] font-bold text-brand-orange uppercase bg-white border border-stone-100 px-2 py-1 rounded self-start">Self-use #8</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Hành vi: <span class="text-stone-600">Quyết định bị phân mảnh trầm trọng do thiếu một màng lọc thấu cảm.</span></p>
+                        <p>USER EVIDENCE SUMMARY</p>
+                    </div>
+                </div>
+
+                <!-- Slide 3: Yumi Solution -->
+                <div id="slide-3" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Giải pháp Yumi (The Solution)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">03</span>
+                    </div>
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                        <div class="space-y-5">
+                            <div class="space-y-2">
+                                <span class="px-2.5 py-1 rounded bg-brand-orange/10 text-brand-orange text-xs font-bold uppercase">Yumi — Bạn đồng hành ẩm thực</span>
+                                <h3 class="text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
+                                    Thấu hiểu ngữ cảnh<br>Ra món trong <span class="text-brand-orange">30 giây</span>
+                                </h3>
+                            </div>
+                            <p class="text-xs text-stone-500 leading-relaxed font-medium">
+                                Yumi hoạt động như một Co-pilot ẩm thực, sử dụng trí tuệ nhân tạo để kết nối các dữ liệu ngoại cảnh thời gian thực với nhu cầu đặc thù của cá nhân bạn:
+                            </p>
+                            <div class="space-y-2.5 text-xs text-stone-700 font-bold">
+                                <p class="flex items-center gap-2">🟢 <span class="text-stone-800">Trò chuyện tiếng Việt tự nhiên, thấu hiểu sắc thái cảm xúc.</span></p>
+                                <p class="flex items-center gap-2">🟢 <span class="text-stone-800">Cân đối chính xác tổng chi phí (Món ăn + Phí ship ước tính).</span></p>
+                            </div>
+                        </div>
+                        <div class="p-6 bg-brand-cream border border-stone-200 rounded-2xl space-y-4">
+                            <h4 class="text-xs font-extrabold text-brand-orange uppercase tracking-wider border-b border-stone-200 pb-2">Ưu việt vượt trội của Yumi</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <span class="text-md">🌤️</span>
+                                    <h5 class="text-xs font-bold text-stone-800">Auto Weather Detect</h5>
+                                    <p class="text-[9px] text-stone-500 font-medium">Nhận diện thời tiết nắng/mưa để gợi ý món ăn tương sinh tốt cho cơ thể.</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <span class="text-md">💖</span>
+                                    <h5 class="text-xs font-bold text-stone-800">Mood Alignment</h5>
+                                    <p class="text-[9px] text-stone-500 font-medium">Đọc vị stress/mệt mỏi để hướng tới các nhóm comfort food giải tỏa tâm lý.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Trải nghiệm: <span class="text-stone-600">Tinh gọn, liền mạch và tập trung hoàn toàn vào bối cảnh thật của con người.</span></p>
+                        <p>VALUE PROPOSITION</p>
+                    </div>
+                </div>
+                
+                <!-- Slide 4: Architecture & Tech Stack -->
+                <div id="slide-4" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Nền Tảng Công Nghệ (Tech Stack)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">04</span>
+                    </div>
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <div class="md:col-span-5 space-y-4">
+                            <h3 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
+                                Kiến trúc linh hoạt<br>& <span class="text-brand-orange">Modular gọn nhẹ</span>
+                            </h3>
+                            <p class="text-xs text-stone-500 font-medium leading-relaxed">
+                                Yumi được thiết kế bất đồng bộ tối ưu tốc độ phản hồi cực nhanh, tối giản hoá băng thông kết nối client-server:
+                            </p>
+                            <div class="space-y-2 text-[11px] font-bold text-stone-700">
+                                <div class="flex justify-between border-b border-stone-100 pb-1.5">
+                                    <span class="text-stone-400 font-semibold">Backend Framework</span>
+                                    <span>FastAPI (Python) / Uvicorn</span>
+                                </div>
+                                <div class="flex justify-between border-b border-stone-100 pb-1.5">
+                                    <span class="text-stone-400 font-semibold">Frontend Core</span>
+                                    <span>Vanilla HTML5 & JavaScript</span>
+                                </div>
+                                <div class="flex justify-between border-b border-stone-100 pb-1.5">
+                                    <span class="text-stone-400 font-semibold">AI Models Orchestrator</span>
+                                    <span>GPT-4o Mini / Gemini 2.5 Flash</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Technology architecture diagram visual -->
+                        <div class="md:col-span-7 bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
+                            <h4 class="text-[10px] font-extrabold uppercase tracking-wider text-brand-orange border-b border-stone-200 pb-2">Bản đồ luồng dữ liệu kiến trúc (Dataflow)</h4>
+                            <div class="grid grid-cols-3 gap-2.5 text-center text-[10px] font-bold text-stone-600">
+                                <div class="p-2.5 bg-white border border-stone-200 rounded-xl space-y-1">
+                                    <span class="block text-stone-400 text-[9px] uppercase font-extrabold">1. Client UI</span>
+                                    <span class="block text-stone-800">Vanilla Glassmorphic</span>
+                                </div>
+                                <div class="p-2.5 bg-orange-500/5 border border-brand-orange/20 rounded-xl space-y-1">
+                                    <span class="block text-brand-orange text-[9px] uppercase font-extrabold">2. Core Backend</span>
+                                    <span class="block text-stone-800">FastAPI Async App</span>
+                                </div>
+                                <div class="p-2.5 bg-white border border-stone-200 rounded-xl space-y-1">
+                                    <span class="block text-stone-400 text-[9px] uppercase font-extrabold">3. Guardrails</span>
+                                    <span class="block text-stone-800">Input Shield & Regex</span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-white border border-stone-150 rounded-xl text-[10px] text-stone-500 font-medium leading-relaxed space-y-1">
+                                <p class="font-bold text-stone-700 uppercase tracking-wider text-[9px] text-brand-green flex items-center gap-1">🔗 Đồng bộ tích hợp API thời gian thực:</p>
+                                <div class="grid grid-cols-3 gap-2 pt-1 font-semibold text-stone-600">
+                                    <span>🌤️ OpenWeatherMap</span>
+                                    <span>🗺️ Geoapify Maps</span>
+                                    <span>🥗 USDA Nutrition</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Đột phá: <span class="text-stone-600">Chuyển đổi runtime linh hoạt giữa OpenAI & Gemini để tiết kiệm chi phí.</span></p>
+                        <p>SYSTEM ARCHITECTURE</p>
+                    </div>
+                </div>
+
+                <!-- Slide 5: BA Design Decision -->
+                <div id="slide-5" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Quyết định BA: Augmentation vs Automation</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">05</span>
+                    </div>
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <div class="md:col-span-6 space-y-5">
+                            <span class="px-2.5 py-1 rounded bg-brand-orange/10 text-brand-orange text-xs font-bold uppercase">Triết lý thiết kế: Trợ lý đồng hành</span>
+                            <h3 class="text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
+                                Khẩu vị là cảm xúc,<br><span class="text-brand-orange">Không thể tự động hóa</span>
+                            </h3>
+                            <p class="text-xs text-stone-500 font-medium leading-relaxed">
+                                Tại sao Yumi chọn mô hình <strong class="text-stone-850">Augmentation (Đồng hành)</strong> thay vì <strong class="text-stone-850">Automation (Tự động hóa hoàn toàn)</strong>? 
+                                Áp dụng học thuyết thiết kế AI Product chuyên sâu:
+                            </p>
+                            <ul class="space-y-3 text-xs font-semibold text-stone-700">
+                                <li class="flex items-start gap-2.5">
+                                    <span class="h-5 w-5 rounded-full bg-orange-100 text-brand-orange flex items-center justify-center text-[10px] shrink-0">✓</span>
+                                    <span><strong class="text-stone-900">Tính chủ quan tuyệt đối:</strong> Khẩu vị và tâm trạng con người là độc nhất, không có một "độ chính xác chung" (global accuracy) cho ẩm thực.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="h-5 w-5 rounded-full bg-orange-100 text-brand-orange flex items-center justify-center text-[10px] shrink-0">✓</span>
+                                    <span><strong class="text-stone-900">Chi phí sai sót đắt đỏ:</strong> AI tự ý đặt đơn (Full-Auto) sai khẩu vị sẽ làm lãng phí tiền bạc, gây ức chế nặng nề và cực khó để hoàn tác (Undo).</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Human-in-the-loop audit box visualization -->
+                        <div class="md:col-span-6 space-y-4">
+                            <div class="p-5 bg-brand-cream border border-stone-200 rounded-2xl space-y-3">
+                                <h4 class="text-xs font-extrabold text-brand-orange uppercase tracking-wider border-b border-stone-200 pb-1.5">Human Role Audit (Day 05)</h4>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-3 bg-white border border-stone-150 rounded-xl space-y-1 shadow-sm">
+                                        <span class="text-md">👑</span>
+                                        <h5 class="text-xs font-bold text-stone-800">Con người = Decider</h5>
+                                        <p class="text-[9px] text-stone-500 leading-normal">AI đề xuất, gom dữ liệu nền sạch. Con người giữ quyền quyết định chọn món cuối cùng.</p>
+                                    </div>
+                                    <div class="p-3 bg-white border border-stone-150 rounded-xl space-y-1 shadow-sm">
+                                        <span class="text-md">📈</span>
+                                        <h5 class="text-xs font-bold text-stone-800">Con người = Trainer</h5>
+                                        <p class="text-[9px] text-stone-500 leading-normal">Lọc cảm xúc, bấm copy hoặc yêu cầu đổi món, tạo ra <strong>Learning Signal</strong> phản hồi quý giá.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-stone-900 rounded-xl text-[10px] font-mono text-stone-300 border border-stone-800 leading-normal">
+                                <span class="text-brand-green"># Day 05 Core Rule:</span> UX is the ultimate safety net. We don't promise AI never fails; we guarantee that when AI is uncertain, the human can override gracefully.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Hành động: <span class="text-stone-600">Tránh cái bẫy "Automation quá đà", tập trung tối ưu hóa năng lực ra quyết định.</span></p>
+                        <p>BA PRODUCT PRINCIPLE</p>
+                    </div>
+                </div>
+
+                <!-- Slide 6: Core Features -->
+                <div id="slide-6" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Tính năng cốt lõi (Core Features)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">06</span>
+                    </div>
+                    
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Feature 1 -->
+                        <div class="bg-brand-cream border border-stone-200/80 rounded-2xl p-6 hover:border-brand-orange/50 transition-all flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <span class="h-9 w-9 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-lg font-bold">📍</span>
+                                <h4 class="font-extrabold text-stone-850">Định Vị GPS Kép</h4>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">
+                                    Lấy trực tiếp GPS thiết bị và gọi API Geoapify để dịch ngược (Reverse Geocoding) ra địa chỉ viết bằng tiếng Việt chính xác cao ngay trên màn hình.
+                                </p>
+                            </div>
+                            <span class="mt-4 text-[9px] font-extrabold text-brand-orange tracking-widest uppercase bg-white border border-stone-150 px-2.5 py-1 rounded-md self-start">Geoapify Geo</span>
+                        </div>
+                        <!-- Feature 2 -->
+                        <div class="bg-brand-cream border border-stone-200/80 rounded-2xl p-6 hover:border-brand-orange/50 transition-all flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <span class="h-9 w-9 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-lg font-bold">❤️</span>
+                                <h4 class="font-extrabold text-stone-850">Đọc Vị Cảm Xúc</h4>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">
+                                    Phát hiện tự động tâm lý người dùng (Mood Detection). Gợi ý kem ngọt khi buồn chán hoặc các loại món canh cay nồng ấm nóng giúp giải tỏa căng thẳng tức thì.
+                                </p>
+                            </div>
+                            <span class="mt-4 text-[9px] font-extrabold text-brand-orange tracking-widest uppercase bg-white border border-stone-150 px-2.5 py-1 rounded-md self-start">Mood Detection</span>
+                        </div>
+                        <!-- Feature 3 -->
+                        <div class="bg-brand-cream border border-stone-200/80 rounded-2xl p-6 hover:border-brand-orange/50 transition-all flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <span class="h-9 w-9 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-lg font-bold">🛡️</span>
+                                <h4 class="font-extrabold text-stone-850">Lá Chắn Dị Ứng</h4>
+                                <p class="text-xs text-stone-500 leading-relaxed font-medium">
+                                    Bộ lọc dị ứng (Allergy filter) cho phép cấu hình và lưu giữ cố định trong phiên làm việc. Tự động loại trừ các thành phần nguy cơ (hải sản, lạc, gluten) ra khỏi gợi ý.
+                                </p>
+                            </div>
+                            <span class="mt-4 text-[9px] font-extrabold text-brand-orange tracking-widest uppercase bg-white border border-stone-150 px-2.5 py-1 rounded-md self-start">Allergy Guard</span>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Cá nhân hóa: <span class="text-stone-600">Được tối ưu chuẩn xác tới từng nhu cầu đặc thù của người dùng Hà Nội.</span></p>
+                        <p>PERSONALIZATION SUITE</p>
+                    </div>
+                </div>
+
+                <!-- Slide 7: Lưới an toàn UX: 4 Paths thiết kế (NEW) -->
+                <div id="slide-7" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-green animate-pulse"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Lưới An Toàn Trải Nghiệm (4 Paths UX)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">07</span>
+                    </div>
+
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Path 1 -->
+                        <div class="p-5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 hover:border-brand-green transition-all">
+                            <span class="text-xl">🟢</span>
+                            <h4 class="font-extrabold text-stone-900 text-xs uppercase tracking-wide">1. Happy Path</h4>
+                            <p class="text-[10px] text-stone-500 leading-relaxed">Thời tiết mưa 20°C trưa hè, user chat: <i>"Muốn ăn ấm bụng dưới 60k"</i>. AI gợi ý Phở gà 40k + 15k ship = 55k, vừa khít budget. Có nút copy nhanh tên quán.</p>
+                        </div>
+                        <!-- Path 2 -->
+                        <div class="p-5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 hover:border-blue-400 transition-all">
+                            <span class="text-xl">🔵</span>
+                            <h4 class="font-extrabold text-stone-900 text-xs uppercase tracking-wide">2. Low-Confidence</h4>
+                            <p class="text-[10px] text-stone-500 leading-relaxed">User gõ mơ hồ: <i>"Ăn gì cũng được"</i>. AI tự detect thời tiết Hà Nội nắng 35°C, hiển thị nút chọn nhanh (Healthy vs Comfort) để tự động thu hẹp scope.</p>
+                        </div>
+                        <!-- Path 3 -->
+                        <div class="p-5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 hover:border-red-400 transition-all">
+                            <span class="text-xl">🔴</span>
+                            <h4 class="font-extrabold text-stone-900 text-xs uppercase tracking-wide">3. Failure Path</h4>
+                            <p class="text-[10px] text-stone-500 leading-relaxed">AI nhận diện sai mood (user đang stress cần đồ ngọt nhưng gợi ý salad nhạt) hoặc quán bị đóng cửa đột xuất, phí ship thực tế bị đội cao vượt budget.</p>
+                        </div>
+                        <!-- Path 4 -->
+                        <div class="p-5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 hover:border-amber-400 transition-all">
+                            <span class="text-xl">🟡</span>
+                            <h4 class="font-extrabold text-stone-900 text-xs uppercase tracking-wide">4. Correction Path</h4>
+                            <p class="text-[10px] text-stone-500 leading-relaxed">User phản hồi sai mood bằng nút <i>"Đổi món (Cay/Ngọt)"</i>. AI đổi vị tức thì, đồng thời đề xuất thêm 2-3 quán backup bán cùng món để phòng rủi ro.</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Lý thuyết AI UX: <span class="text-stone-600">AI sẽ sai. Thiết kế sản phẩm là kiến thiết đường đi cho lỗi xảy ra êm đẹp.</span></p>
+                        <p>TRUST RECOVERY ENGINE</p>
+                    </div>
+                </div>
+
+                <!-- Slide 8: Guardrails & Security -->
+                <div id="slide-8" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">An toàn & Bảo mật (Guardrails)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">08</span>
+                    </div>
+                    
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <!-- Left explanation of guardrails -->
+                        <div class="md:col-span-6 space-y-4">
+                            <span class="px-2.5 py-1 rounded bg-red-100 text-red-600 text-xs font-bold border border-red-200/30 uppercase">Bảo vệ an toàn kép</span>
+                            <h3 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
+                                Tầng kiểm soát<br><span class="text-brand-orange">Độc quyền ngay tại Backend</span>
+                            </h3>
+                            <p class="text-xs md:text-sm text-stone-500 font-medium leading-relaxed">
+                                Chúng tôi nhận thức sâu sắc rằng AI có thể nói sai lệch hoặc bị khai thác phá hoại (jailbreak). Yumi được trang bị một bộ lọc kép nghiêm ngặt chạy trực tiếp trên FastAPI để sàng lọc đầu vào:
+                            </p>
+                            <ul class="space-y-3.5 text-xs md:text-sm font-semibold text-stone-700">
+                                <li class="flex items-start gap-2.5">
+                                    <span class="h-5 w-5 rounded-full bg-orange-100 text-brand-orange flex items-center justify-center text-[10px] shrink-0">✓</span>
+                                    <span>Chặn tuyệt đối các nỗ lực ép AI tiết lộ System Prompt gốc.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5">
+                                    <span class="h-5 w-5 rounded-full bg-orange-100 text-brand-orange flex items-center justify-center text-[10px] shrink-0">✓</span>
+                                    <span>Chặn câu hỏi ngoài scope (toán, lập trình) nhờ thuật toán Regex Word Boundaries.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Right technical regex visual showcase -->
+                        <div class="md:col-span-6 bg-stone-900 text-stone-300 rounded-2xl p-5 font-mono text-[11px] leading-relaxed relative overflow-hidden shadow-inner border border-stone-800">
+                            <div class="absolute top-2 right-3 text-[9px] font-bold text-red-500 bg-red-950 border border-red-900 px-2 py-0.5 rounded uppercase">
+                                RegEx Shield
+                            </div>
+                            <div class="text-stone-500 border-b border-stone-800 pb-2 mb-3 font-semibold text-[10px]">
+                                # backend/guardrails/scope_limiter.py
+                            </div>
+                            <div class="space-y-2.5">
+                                <p class="text-brand-green"><span class="text-stone-500">OUT_OF_SCOPE_WORDS</span> = [</p>
+                                <p class="pl-4">r<span class="text-amber-400">"\b(viết code|lập trình|giải toán|coding)\b"</span>,</p>
+                                <p class="pl-4">r<span class="text-amber-400">"\b(math|equation|javascript|python)\b"</span></p>
+                                <p class="text-brand-green">]</p>
+                                <p class="text-stone-500 mt-2"># Chống bẻ khóa & chặn nhận diện nhầm tiếng Việt</p>
+                                <p class="text-amber-500 font-semibold">
+                                    if any(re.search(pattern, user_query, re.IGNORECASE) for pattern in OUT_OF_SCOPE_WORDS):
+                                </p>
+                                <p class="pl-4 text-red-400">
+                                    return JSONResponse(status_code=400, content={"error": "Yumi chỉ hỗ trợ giải đáp các câu hỏi liên quan tới ẩm thực thưa bạn!"})
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Ưu điểm: <span class="text-stone-600">Độ chính xác tuyệt đối, không gây ảnh hưởng tới hiệu năng và độ trễ của hệ thống.</span></p>
+                        <p>PROMPT DEFENSE SYSTEM</p>
+                    </div>
+                </div>
+
+                <!-- Slide 9: Evaluation & Testing Results -->
+                <div id="slide-9" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Nghiệm Thu & Kiểm Thử (Production-Ready)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">09</span>
+                    </div>
+                    
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <!-- Left stats info -->
+                        <div class="md:col-span-5 space-y-4">
+                            <h3 class="text-3xl font-extrabold text-stone-900 tracking-tight leading-none">
+                                Kiểm thử toàn diện <span class="text-brand-orange">65/65 Kịch Bản</span>
+                            </h3>
+                            <p class="text-xs md:text-sm text-stone-500 font-medium leading-relaxed">
+                                Sản phẩm của chúng tôi đã vượt qua quy trình kiểm định chất lượng chặt chẽ với những chỉ số ấn tượng, sẵn sàng đưa vào vận hành thực tế:
+                            </p>
+                            <div class="p-4 bg-brand-cream border border-stone-150 rounded-xl space-y-1.5">
+                                <div class="text-[10px] font-extrabold text-brand-orange uppercase tracking-wider">Hiệu năng phản hồi của Agent</div>
+                                <div class="text-sm font-bold text-stone-700 flex justify-between">
+                                    <span>⚡ Tốc độ trung bình:</span>
+                                    <span class="text-brand-green">&lt; 1.5 Giây</span>
+                                </div>
+                                <div class="text-sm font-bold text-stone-700 flex justify-between">
+                                    <span>💾 Tối ưu API nhờ:</span>
+                                    <span>Cơ chế TTL Cache</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right testing console visual -->
+                        <div class="md:col-span-7 bg-stone-900 rounded-2xl p-5 text-stone-300 font-mono text-[11px] leading-relaxed border border-stone-800 shadow-inner">
+                            <div class="flex items-center justify-between border-b border-stone-800 pb-2 mb-3">
+                                <div class="flex gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                                </div>
+                                <span class="text-[9px] text-stone-500 font-extrabold uppercase">PyTest Execution Console</span>
+                            </div>
+                            <div class="space-y-1.5">
+                                <p class="text-stone-400">pytest tests/test_agent_robustness.py</p>
+                                <p class="text-stone-500">=========================== test session starts ===========================</p>
+                                <p class="text-stone-400">platform linux -- Python 3.11.2, pytest-7.4.0</p>
+                                <p class="text-stone-400">plugins: asyncio-0.21.1, anyio-3.7.1</p>
+                                <p class="text-stone-400">collected 65 items</p>
+                                <p class="text-stone-500">................................................................. [100%]</p>
+                                <p class="text-brand-green font-bold">=========================== 65 passed in 1.83 seconds =========================</p>
+                                <p class="text-stone-400">✔️ Test Happy Paths (Ăn cháo ngày mưa, bún ốc trưa hè) - Passed</p>
+                                <p class="text-stone-400">✔️ Test Guardrails Block Out-of-Scope (Coding, Math) - Passed</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Kiểm nghiệm: <span class="text-stone-600">Đảm bảo hoạt động tối ưu mượt mà trên đa trình duyệt (Chrome, Safari, Cốc Cốc).</span></p>
+                        <p>EMPIRICAL EVALUATION</p>
+                    </div>
+                </div>
+
+                <!-- Slide 10: Vision & Future Roadmap -->
+                <div id="slide-1" class="slide-element absolute inset-0 bg-white border border-stone-200/60 rounded-3xl p-12 shadow-md flex flex-col justify-between opacity-0 pointer-events-none slide-transition translate-y-4">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="h-2.5 w-2.5 rounded-full bg-brand-orange"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-stone-400">Tầm Nhìn Tương Lai (Roadmap)</span>
+                        </div>
+                        <span class="text-stone-300 font-bold text-5xl">10</span>
+                    </div>
+                    
+                    <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <div class="md:col-span-4 space-y-4">
+                            <h3 class="text-3xl font-extrabold text-brand-charcoal tracking-tight leading-tight">
+                                Tương lai của<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-amber-500">Trợ lý ẩm thực</span>
+                            </h3>
+                            <p class="text-xs md:text-sm text-stone-500 font-medium leading-relaxed">
+                                Đột phá bối cảnh hiện tại chỉ là vạch xuất phát. Yumi định vị trở thành một nền tảng toàn diện trong hành trình số hóa F&B:
+                            </p>
+                        </div>
+                        
+                        <!-- Timeline Roadmap layout -->
+                        <div class="md:col-span-8 space-y-4">
+                            <!-- Phase 1 -->
+                            <div class="p-4 bg-stone-50 border border-stone-200 rounded-xl relative pl-12">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-brand-orange text-white text-[10px] font-black flex items-center justify-center">1</div>
+                                <h4 class="font-extrabold text-xs text-stone-800 uppercase tracking-wider">Tích hợp giao hàng một chạm (Q3 2026)</h4>
+                                <p class="text-[11px] text-stone-500 font-semibold leading-relaxed">Kết nối Deep Link trực tiếp tới giỏ hàng của ShopeeFood, GrabFood để hoàn thiện giao dịch chỉ với 5 giây.</p>
+                            </div>
+                            <!-- Phase 2 -->
+                            <div class="p-4 bg-stone-50 border border-stone-200 rounded-xl relative pl-12">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-brand-orange text-white text-[10px] font-black flex items-center justify-center">2</div>
+                                <h4 class="font-extrabold text-xs text-stone-800 uppercase tracking-wider">Quản trị sức khỏe chuyên sâu (Q4 2026)</h4>
+                                <p class="text-[11px] text-stone-500 font-semibold leading-relaxed">Liên kết dữ liệu với Apple Health để theo dõi calo nạp vào hàng tuần và tự động hóa đề xuất thực đơn ăn kiêng.</p>
+                            </div>
+                            <!-- Phase 3 -->
+                            <div class="p-4 bg-stone-50 border border-stone-200 rounded-xl relative pl-12">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-brand-orange text-white text-[10px] font-black flex items-center justify-center">3</div>
+                                <h4 class="font-extrabold text-xs text-stone-800 uppercase tracking-wider">Hợp tác thương mại F&B (Q1 2027)</h4>
+                                <p class="text-[11px] text-stone-500 font-semibold leading-relaxed">Tích hợp trực tiếp các chương trình khuyến mãi độc quyền từ các thương hiệu ẩm thực lớn vào bộ lọc của AI.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-stone-100 pt-5 shrink-0 flex justify-between items-center text-xs text-stone-400 font-bold">
+                        <p>Cam kết: <span class="text-stone-600">Đồng hành cùng lối sống lành mạnh của người Việt trẻ thông qua sức mạnh công nghệ.</span></p>
+                        <p>FUTURE PLAN</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Presenter Panel (Collapsible Right Sidebar with Script & Timer) -->
+        <div id="presenter-sidebar" class="w-0 bg-stone-900 text-stone-200 h-full border-l border-stone-800 transition-all duration-500 ease-in-out overflow-hidden flex flex-col shrink-0">
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b border-stone-800 shrink-0 flex justify-between items-center bg-stone-950">
+                <div class="flex items-center gap-2">
+                    <span class="flex h-2.5 w-2.5 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-orange opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-orange"></span>
+                    </span>
+                    <span class="text-sm font-bold tracking-tight text-white">Presenter View</span>
+                </div>
+                <!-- Countdown Timer -->
+                <div class="bg-stone-800 text-brand-orange font-mono text-sm px-3 py-1 rounded-md border border-stone-700 flex items-center gap-1">
+                    <span id="timer-minutes">10</span>:<span id="timer-seconds">00</span>
+                    <button id="toggle-timer-btn" class="ml-1 text-xs text-stone-400 hover:text-white" title="Bắt đầu / Tạm dừng">
+                        ⏸
+                    </button>
+                </div>
+            </div>
+
+            <!-- Speaker Script Content (Dynamic based on slide index) -->
+            <div class="flex-grow p-6 overflow-y-auto notes-scrollbar space-y-4">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-brand-orange">Bản thảo kịch bản nói (Speaker Notes)</div>
+                <h3 id="notes-slide-title" class="text-md font-bold text-white border-b border-stone-800 pb-2">Tiêu đề slide</h3>
+                <div id="notes-content" class="text-stone-300 text-xs leading-relaxed space-y-3 font-medium">
+                    <!-- Dynamic script here -->
+                </div>
+            </div>
+
+            <!-- Sidebar Footer with Hotkeys guide -->
+            <div class="p-4 bg-stone-950 border-t border-stone-800 text-[10px] text-stone-400 font-semibold space-y-1.5 shrink-0">
+                <p class="text-stone-500 uppercase tracking-wider text-[9px] font-bold">Phím tắt nhanh</p>
+                <div class="flex justify-between">
+                    <span>Mũi tên Phải (→) / Space:</span>
+                    <span class="text-stone-300">Slide Tiếp theo</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Mũi tên Trái (←):</span>
+                    <span class="text-stone-300">Slide Trước đó</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Phím S:</span>
+                    <span class="text-stone-300">Ẩn/Hiện kịch bản này</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Navigation Footer Controls -->
+    <footer class="h-16 px-8 border-t border-stone-200/80 bg-white/80 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
+        <div class="flex items-center gap-2">
+            <button id="prev-slide-btn" class="p-2.5 rounded-xl border border-stone-200 hover:border-brand-orange hover:bg-brand-cream hover:text-brand-orange transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <span id="slide-progress" class="text-xs font-bold text-stone-500 px-3 min-w-[70px] text-center">
+                Slide 1 / 10
+            </span>
+            <button id="next-slide-btn" class="p-2.5 rounded-xl border border-stone-200 hover:border-brand-orange hover:bg-brand-cream hover:text-brand-orange transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
+
+        <!-- Progress Indicator Bar -->
+        <div class="flex-grow max-w-md mx-8 bg-stone-100 rounded-full h-1.5 overflow-hidden">
+            <div id="progress-indicator" class="bg-brand-orange h-full rounded-full transition-all duration-300" style="width: 10%;"></div>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wide">VinUniversity Batch 02 © 2026</span>
+        </div>
+    </footer>
+
+    <!-- Speaker Scripts Database & State Logic -->
+    <script>
+        // Speaker notes data separated completely from the presentation HTML presentation layer
+        const speakerNotes = {
+            1: {
+                title: "Slide 1: Slide Tiêu đề & Giới thiệu",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Mở đầu tự tin & Thu hút sự chú ý:</p>
+                    <p>"Chào các quý vị Ban giám khảo, tôi là Cường - BA đại diện cho nhóm phát triển dự án ngày hôm nay. Tôi có một câu hỏi nhỏ dành cho hội trường: Có ai ở đây từng dành cả giờ trưa để lướt điện thoại chỉ để quyết định xem 'Trưa nay ăn gì' đến mức đói lả người hay chưa?"</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Đi sâu vào giới thiệu sản phẩm:</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1 text-stone-300">
+                        <li>Hôm nay, chúng tôi mang tới một lời giải toàn diện mang tên <strong>Yumi — AI Food Agent</strong>.</li>
+                        <li>Đây không phải là một chatbot thông thường, mà là một trợ lý thông minh có khả năng <strong>thấu hiểu ngữ cảnh con người theo thời gian thực</strong>: từ thời tiết thực tế, tâm trạng hiện tại cho tới sức khỏe cá nhân của bạn.</li>
+                    </ul>
+                `
+            },
+            2: {
+                title: "Slide 2: Bài toán thực tế (Problem Statement)",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Bộc lộ các "điểm gãy" trải nghiệm thực tế:</p>
+                    <p>"Để xây dựng Yumi, chúng tôi không tự suy đoán. Chúng tôi đã trải qua 65 kịch bản kiểm thử hành vi thực tế và tự trải nghiệm các ứng dụng hiện nay."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 3 Nỗi đau lớn nhất mà chúng tôi ghi nhận được:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li><strong>Quá tải thông tin:</strong> Người dùng lãng phí quyết định do các đề xuất bị chi phối bởi các nhà hàng chạy quảng cáo trả phí thay vì nhu cầu thực tế.</li>
+                        <li><strong>Mù tịt ngữ cảnh ngoại cảnh:</strong> Gợi ý lẩu cay nóng vào ngày hè 38 độ hay đẩy trà sữa đá lạnh ngày đông bão buốt.</li>
+                        <li><strong>Phí ship vượt budget (Ẩn họa chi phí):</strong> Đề xuất món ăn đúng ngân sách 45k nhưng quán quá xa khiến phí ship thực tế tăng cao dội tổng đơn vượt xa khả năng chi tiêu.</li>
+                    </ul>
+                `
+            },
+            3: {
+                title: "Slide 3: Giải pháp Yumi (The Solution)",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Giới thiệu giá trị cốt lõi của Yumi:</p>
+                    <p>"Giải pháp của chúng tôi là một giao diện hội thoại Một Cửa (One-Stop Hub) thấu hiểu tâm lý sâu sắc."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Khác biệt lớn của Yumi:</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1 text-stone-300">
+                        <li>Khi người dùng than phiền mệt mỏi, Yumi tự động nhận dạng cảm xúc để gợi ý nhóm <strong>comfort food</strong> cay nóng hoặc ngọt ngào giúp giải tỏa căng thẳng.</li>
+                        <li>Đặc biệt, Yumi không mập mờ về giá. Agent tự động tính khoảng cách và phí ship thực tế để chắc chắn món ăn không vượt quá ngân sách (budget) người dùng đặt ra.</li>
+                    </ul>
+                `
+            },
+            4: {
+                title: "Slide 4: Kiến trúc hệ thống & Tech Stack",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Khẳng định tính hoàn thiện về mặt kỹ thuật:</p>
+                    <p>"Hệ thống của chúng tôi được thiết kế với triết lý Modular cực kỳ mượt mà, tối ưu hóa băng thông tối đa."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Điểm nhấn công nghệ:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li><strong>FastAPI & Uvicorn:</strong> Đảm bảo Backend bất đồng bộ đạt tốc độ phản hồi tối ưu dưới 1.5 giây.</li>
+                        <li><strong>Cơ chế Multi-LLM Runtime:</strong> Cho phép hệ thống chuyển đổi linh hoạt tức thì giữa GPT-4o Mini và Gemini 2.5 Flash để tối ưu hóa chi phí vận hành cho nhà đầu tư.</li>
+                        <li><strong>Tích hợp API đồng bộ:</strong> Gọi OpenWeatherMap để biết thời tiết real-time và Geoapify để lấy tọa độ người dùng.</li>
+                    </ul>
+                `
+            },
+            5: {
+                title: "Slide 5: Quyết định BA - Tại sao chọn Augmentation?",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Thấu cảm triết lý học phần AI Product:</p>
+                    <p>"Dưới góc độ một Business Analyst, câu hỏi cốt lõi là: Tại sao nhóm không tự động hoá đặt đơn (Automation) luôn mà lại chọn Augmentation? Câu trả lời nằm ở bản chất cốt lõi của việc ăn uống."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Lập luận lý thuyết AI Product:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li><strong>Khẩu vị và cảm xúc là chủ quan & độc nhất:</strong> Không có một công thức accuracy toàn cầu (global accuracy) nào đoán trúng hoàn toàn bạn muốn ăn gì hôm nay. Đồ ăn liên quan trực tiếp đến cảm nhận xúc giác.</li>
+                        <li><strong>Rủi ro chi phí sai sót đắt đỏ:</strong> Nếu AI tự động đặt nhầm món, chi phí sửa lỗi và thiệt hại lòng tin là cực kỳ cao.</li>
+                        <li><strong>Cơ chế Human-in-the-loop:</strong> Chúng tôi thiết kế người dùng ở vai trò <strong>Decider</strong>. Đồng thời, hành động 'Copy' hay 'Đổi món' của họ cung cấp <strong>Learning Signal</strong> quan trọng để cải thiện độ gợi ý của AI.</li>
+                    </ul>
+                `
+            },
+            6: {
+                title: "Slide 6: Tính năng cá nhân hóa vượt trội (Core Features)",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Làm rõ cơ chế cá nhân hóa sâu sắc:</p>
+                    <p>"Ăn uống là hành vi mang tính chủ quan cao. Vì thế cá nhân hóa của Yumi được đẩy lên mức tuyệt đối."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Ba tính năng nổi bật:</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1 text-stone-300">
+                        <li><strong>Định vị GPS kép:</strong> Không chỉ tọa độ thô, chúng tôi chuyển đổi ngược về dạng địa chỉ viết bằng tiếng Việt chính xác cao thông qua Geoapify.</li>
+                        <li><strong>Lá chắn dị ứng (Allergy filter):</strong> Lưu giữ thông tin dị ứng đậu phộng, gluten... theo session chat để lọc triệt để món ăn gây rủi ro sức khỏe.</li>
+                    </ul>
+                `
+            },
+            7: {
+                title: "Slide 7: Lưới An Toàn Trải Nghiệm (4 Paths UX)",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Phân tích chiều sâu AI UX Design:</p>
+                    <p>"Một sản phẩm AI thực tế không bao giờ tự tin đúng 100%. Sức mạnh của nó nằm ở việc thiết kế 4 kịch bản để dẫn dắt trải nghiệm."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Diễn giải 4 tuyến thiết kế:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li><strong>Happy Path:</strong> Khi hệ thống tự tin, gợi ý tối giản đi kèm lý do thuyết phục và phím hành động nhanh (1-click Copy).</li>
+                        <li><strong>Low-Confidence Path:</strong> Khi người dùng mơ hồ, AI không đoán mò mà đưa ra các nút hướng dẫn nhanh để thu hẹp phạm vi.</li>
+                        <li><strong>Failure Path:</strong> Cách xử lý lỗi khi AI phân tích sai lệch bối cảnh cảm xúc hoặc dữ liệu quán đóng cửa/ship cao bị lệch pha.</li>
+                        <li><strong>Correction Path:</strong> Đưa ra nút đổi vị ngọt/cay, danh sách quán backup và tự động lưu vết nhật ký lỗi để cải thiện model.</li>
+                    </ul>
+                `
+            },
+            8: {
+                title: "Slide 8: Tầng bảo vệ chuyên sâu (Guardrails & Security)",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Thiết kế AI An Toàn & Tin Cậy:</p>
+                    <p>"Là một sản phẩm thương mại thực tế, Yumi không được phép nói sai lệch hay bị bẻ khóa để làm những nhiệm vụ khác."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Giải trình cơ chế chặn Out-of-Scope thông minh:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li>Chúng tôi phát hiện ra tiếng Việt có dấu rất dễ bị nhận diện nhầm khi dùng các bộ lọc thô sơ.</li>
+                        <li>Vì thế, nhóm đã tích hợp thuật toán <strong>Regex Word Boundaries (\\b)</strong> để lọc sạch các từ khóa lập trình, dịch thuật, giải toán mà tuyệt đối không gặp lỗi nhận diện nhầm tiếng Việt, giúp AI luôn an toàn trước mọi cuộc tấn công prompt.</li>
+                    </ul>
+                `
+            },
+            9: {
+                title: "Slide 9: Kết quả kiểm thử & Demo thực tế",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Chứng minh bằng dữ liệu nghiệm thu thực tế:</p>
+                    <p>"Yumi không chỉ là một bản vẽ trên giấy. Chúng tôi đã xây dựng hoàn thiện và chạy nghiệm thu thành công."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Minh chứng chất lượng chuẩn sản phẩm:</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-1 text-stone-300">
+                        <li>Đạt tỷ lệ vượt qua tuyệt đối <strong>100% (65/65 test cases thành công)</strong> chạy kiểm thử PyTest chỉ trong 1.83 giây.</li>
+                        <li>Tốc độ phản hồi cực nhanh nhờ áp dụng cơ chế <strong>TTL Cache</strong> để tối ưu hóa tần suất gọi API ngoài, bảo vệ độ bền của hệ thống.</li>
+                    </ul>
+                `
+            },
+            10: {
+                title: "Slide 10: Định hướng phát triển & Tầm nhìn tương lai",
+                script: `
+                    <p class="font-bold text-brand-orange">🎯 Khép lại buổi pitching đầy cảm hứng:</p>
+                    <p>"Vạch đích của ngày hôm nay chỉ là điểm khởi đầu cho hành trình thay đổi trải nghiệm F&B Việt Nam."</p>
+                    <p class="mt-2 font-bold text-stone-200">💡 Lộ trình phát triển 3 Giai đoạn:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-1 text-stone-300">
+                        <li><strong>Q3 2026:</strong> Tích hợp deep-link trực tiếp sang ShopeeFood, GrabFood để thanh toán 1 chạm trong 5 giây.</li>
+                        <li><strong>Q4 2026:</strong> Đồng bộ Apple Health để quản trị dinh dưỡng và năng lượng nạp vào tự động.</li>
+                        <li><strong>Q1 2027:</strong> Liên kết các API ưu đãi độc quyền từ các thương hiệu ẩm thực lớn. Cảm ơn Thầy Cô và các bạn đã lắng nghe!"</li>
+                    </ul>
+                `
+            }
+        };
+
+        // Application State Management
+        let currentSlide = 1;
+        const totalSlides = 10;
+        let presenterMode = false;
+        
+        // Timer State
+        let timerSeconds = 600; // 10 minutes default
+        let timerInterval = null;
+
+        // Elements
+        const slidesViewport = document.getElementById('slides-viewport');
+        const presenterSidebar = document.getElementById('presenter-sidebar');
+        const togglePresenterBtn = document.getElementById('toggle-presenter-btn');
+        const modeStatusBadge = document.getElementById('mode-status-badge');
+        const slideProgress = document.getElementById('slide-progress');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const prevSlideBtn = document.getElementById('prev-slide-btn');
+        const nextSlideBtn = document.getElementById('next-slide-btn');
+        
+        // Timer Elements
+        const timerMinutesEl = document.getElementById('timer-minutes');
+        const timerSecondsEl = document.getElementById('timer-seconds');
+        const toggleTimerBtn = document.getElementById('toggle-timer-btn');
+
+        // Speaker Notes elements
+        const notesSlideTitle = document.getElementById('notes-slide-title');
+        const notesContent = document.getElementById('notes-content');
+
+        // Safe registration of event listeners helper to fully prevent null errors
+        function safeAttachListener(element, event, callback) {
+            if (element) {
+                element.addEventListener(event, callback);
+            }
+        }
+
+        // Render current active slide
+        function renderSlides() {
+            // Locate slides dynamically based on data-attributes or element class list
+            const slides = document.querySelectorAll('.slide-element');
+            slides.forEach((slide, idx) => {
+                const currentIdx = idx + 1;
+                if (currentIdx === currentSlide) {
+                    slide.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    slide.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                } else {
+                    slide.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                    slide.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                }
+            });
+
+            // Progress Update
+            if (slideProgress) {
+                slideProgress.textContent = `Slide ${currentSlide} / ${totalSlides}`;
+            }
+            if (progressIndicator) {
+                progressIndicator.style.width = `${(currentSlide / totalSlides) * 100}%`;
+            }
+
+            // Synced notes update
+            updateSpeakerNotes();
+        }
+
+        function updateSpeakerNotes() {
+            if (speakerNotes[currentSlide]) {
+                if (notesSlideTitle) notesSlideTitle.textContent = speakerNotes[currentSlide].title;
+                if (notesContent) notesContent.innerHTML = speakerNotes[currentSlide].script;
+            }
+        }
+
+        // Action: Navigate Slides
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                renderSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                renderSlides();
+            }
+        }
+
+        // Presenter Mode toggling
+        function togglePresenterMode() {
+            presenterMode = !presenterMode;
+            if (presenterMode) {
+                if (presenterSidebar) presenterSidebar.style.width = '380px';
+                if (modeStatusBadge) {
+                    modeStatusBadge.innerHTML = '<span class="h-2 w-2 rounded-full bg-brand-orange animate-pulse"></span> Thuyết trình viên';
+                    modeStatusBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-brand-orange flex items-center gap-1.5 transition-all border border-brand-orange/25";
+                }
+                if (togglePresenterBtn) {
+                    togglePresenterBtn.classList.add('bg-brand-orange', 'text-white', 'border-brand-orange');
+                    togglePresenterBtn.classList.remove('hover:bg-brand-cream');
+                }
+                
+                // Start timer automatically if it's not running yet
+                if (!timerInterval) {
+                    startTimer();
+                }
+            } else {
+                if (presenterSidebar) presenterSidebar.style.width = '0';
+                if (modeStatusBadge) {
+                    modeStatusBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-stone-400"></span> Chế độ trình chiếu sạch';
+                    modeStatusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-500 flex items-center gap-1.5 transition-all";
+                }
+                if (togglePresenterBtn) {
+                    togglePresenterBtn.classList.remove('bg-brand-orange', 'text-white', 'border-brand-orange');
+                    togglePresenterBtn.classList.add('hover:bg-brand-cream');
+                }
+            }
+        }
+
+        // Timer Implementation
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    const mins = Math.floor(timerSeconds / 60);
+                    const secs = timerSeconds % 60;
+                    if (timerMinutesEl) timerMinutesEl.textContent = mins < 10 ? '0' + mins : mins;
+                    if (timerSecondsEl) timerSecondsEl.textContent = secs < 10 ? '0' + secs : secs;
+                } else {
+                    clearInterval(timerInterval);
+                    if (toggleTimerBtn) toggleTimerBtn.textContent = "🔄";
+                }
+            }, 1000);
+            if (toggleTimerBtn) toggleTimerBtn.textContent = "⏸";
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            if (toggleTimerBtn) toggleTimerBtn.textContent = "▶";
+        }
+
+        // Attach listeners safely
+        safeAttachListener(togglePresenterBtn, 'click', togglePresenterMode);
+        safeAttachListener(prevSlideBtn, 'click', prevSlide);
+        safeAttachListener(nextSlideBtn, 'click', nextSlide);
+
+        safeAttachListener(toggleTimerBtn, 'click', () => {
+            if (timerInterval) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        // Key bindings for slider control
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key.toLowerCase() === 's') {
+                togglePresenterMode();
+            }
+        });
+
+        // Init setup
+        window.onload = function() {
+            renderSlides();
+        }
+    </script>
+</body>
+</html>

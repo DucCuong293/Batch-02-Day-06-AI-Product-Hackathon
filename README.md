@@ -1,52 +1,101 @@
-# VinUni AI Product Development Labs
+# Yumi - AI Food Agent
 
-**Học viên:** Dương Đức Cường — 2A202600794  
-**Nhánh đào tạo:** Batch 02 — Day 05 & Day 06 AI Products Labs
+**Track:** Food & Local Delivery
 
----
+**App tham khảo:** ShopeeFood
 
-## 📂 Cấu trúc Repository
+**Build slice:** AI gợi ý món và quán phù hợp với ngữ cảnh hiện tại của người dùng.
+
+Yumi giúp sinh viên và dân văn phòng trả lời câu hỏi "ăn gì bây giờ?" bằng cách kết hợp hội thoại tự nhiên với thời tiết, thời gian, vị trí GPS, tâm trạng, ngân sách, khoảng cách, phí ship ước tính và dữ liệu dinh dưỡng. AI thu hẹp hàng nghìn lựa chọn xuống một quán chính cùng các phương án dự phòng; người dùng luôn giữ quyền quyết định cuối cùng.
+
+## Thành viên và phân công
+
+| Thành viên | Mã học viên | Phụ trách |
+|---|---|---|
+| Dương Đức Cường | 2A202600794 | Leader; tổng hợp evidence và SPEC; tích hợp AI/backend/API; quản lý repo |
+| Đinh Hoàng Nam | 2A202600884 | Prototype development; hỗ trợ frontend và tích hợp API |
+| Bùi Hoàng Sơn | 2A202600925 | Testing và QA; kiểm thử happy, low-confidence, failure, correction |
+| Ngô Minh Khánh | 2A202600953 | Business/UX; nghiên cứu người dùng và problem-solution fit |
+| Bùi Như Kiệt | 2A202600895 | Demo script, tài liệu và hỗ trợ quản lý bản nộp |
+
+## Giá trị được chứng minh
+
+- Hiểu yêu cầu nhiều tiêu chí bằng tiếng Việt: món, budget, healthy/comfort và mood.
+- Tự xin GPS khi mở app; không giả định vị trí nếu người dùng chưa cấp quyền.
+- Tìm quán thật gần người dùng qua Geoapify và tính khoảng cách.
+- Dùng thời tiết thật từ OpenWeatherMap để tạo ngữ cảnh.
+- Tra dinh dưỡng qua USDA FoodData Central.
+- Xếp hạng quán theo độ phù hợp, giao nhanh, rating, budget và độ tin cậy.
+- Cho phép đổi món/đổi quán; không lặp lại lựa chọn vừa bị từ chối.
+- Chặn prompt injection, câu hỏi ngoài phạm vi và xử lý dữ liệu/API thiếu.
+
+## Cấu trúc repo
 
 ```text
-├── 01-invidual-workshop/
-│   └── 2A202600794-DuongDucCuong/
-│       ├── app-teardown.md          ← Cá nhân: Bài mổ app Moni (MoMo)
-│       └── *.png                    ← Cá nhân: 9 screenshot bằng chứng thực tế
-│
-└── 02-group-spec/
-    ├── evidence-pack-template.md    ← Nhóm: Tài liệu thu thập bằng chứng (ShopeeFood)
-    ├── synthesis-decide-toolkit.md   ← Nhóm: Tổng hợp insight & lựa chọn build slice
-    └── thin-spec-template.md        ← Nhóm: Bản tả tính năng chi tiết & kế hoạch chạy thử
+.
+├── README.md
+├── hackathon-rules.md
+├── spec/
+│   ├── spec.md
+│   ├── demo-script.md
+│   ├── test-cases.md
+│   └── supporting/
+│       ├── evidence-pack.md
+│       ├── synthesis-decide.md
+│       └── thin-spec-day5.md
+└── codebase/
+    ├── README.md
+    └── ai-food-agent/
+        ├── backend/
+        ├── frontend/
+        ├── tests/
+        └── .env.example
 ```
 
----
+## Chạy prototype
 
-## 👤 Phần 1: Cá nhân (Individual Workshop)
-* **Ứng dụng phân tích:** MoMo — Moni (Trợ thủ tài chính AI)
-* **Track:** Fintech / Quản lý tài chính cá nhân
-* **Chi tiết bài làm:** [01-invidual-workshop/2A202600794-DuongDucCuong/app-teardown.md](file:///E:/VinUni/Day06-2A202600794-DuongDucCuong/01-invidual-workshop/2A202600794-DuongDucCuong/app-teardown.md)
+Yêu cầu: Python 3.11+.
 
-### Tóm tắt nội dung:
-* **Pain point chính:** Moni đưa nhận xét đánh giá sai lệch (Ví dụ khen *"Kiểm soát chi tiêu rất tốt!"* khi hiển thị 0đ chi tiêu) do AI chỉ đọc dữ liệu phát sinh qua ví MoMo mà không nhận thức được khoảng trống dữ liệu do người dùng chi tiêu bằng tiền mặt hoặc chuyển khoản ngân hàng ngoài hệ sinh thái.
-* **Giải pháp đề xuất (Build slice):** Prototype AI phát hiện khoảng trống dữ liệu bất thường → hiển thị cảnh báo nguồn dữ liệu chỉ bao gồm giao dịch MoMo → chủ động hỏi người dùng bổ sung giao dịch ngoài hệ thống → KHÔNG đánh giá tốt/xấu khi chưa đủ cơ sở dữ liệu.
+```powershell
+cd codebase/ai-food-agent
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+Copy-Item .env.example .env
+# Điền API keys vào .env
+cd backend
+python main.py
+```
 
----
+Mở `http://localhost:8000`, sau đó chọn **Allow/Cho phép** khi trình duyệt hỏi quyền vị trí. Geolocation chỉ hoạt động trên `localhost` hoặc HTTPS.
 
-## 👥 Phần 2: Nhóm (Group Specification)
-* **Ứng dụng phân tích:** ShopeeFood (Đặt đồ ăn & giao hàng)
-* **Track:** Track C — Food & Local Delivery
-* **Dự án nhóm:** AI Food Agent gợi ý món ăn theo ngữ cảnh (Context-aware Food Agent)
-* **Thành viên nhóm:** 
-  1. Dương Đức Cường (2A202600794)
-  2. Đinh Hoàng Nam (2A202600884)
-  3. Bùi Hoàng Sơn (2A202600925)
-  4. Ngô Minh Khánh (2A202600953)
-  5. Bùi Như Kiệt (2A202600895)
-* **Chi tiết bài làm:** Xem các tài liệu trong [02-group-spec/](file:///E:/VinUni/Day06-2A202600794-DuongDucCuong/02-group-spec)
+## API và công cụ
 
-### Tóm tắt nội dung:
-* **Pain point chính:** ShopeeFood đề xuất món ăn bị thiên vị quảng cáo (paid promotion) và không quan tâm đến ngữ cảnh thực tế của người dùng, dẫn đến các đề xuất không hợp lý (ví dụ: gợi ý ăn lẩu buffet vào sáng sớm, gợi ý nước đá/salad lạnh vào ngày mưa lạnh, gợi ý các quán đã đóng cửa lúc đêm muộn).
-* **Giải pháp đề xuất (Build slice):** AI Food Agent giúp gợi ý món ăn dựa trên ngữ cảnh tức thời:
-  * Tự động nhận diện thời tiết (Weather API) và thời gian thực.
-  * Nhận dạng tâm trạng người dùng qua chatbot hoặc click nhanh (mood: stress, vui vẻ, mệt mỏi) và yêu cầu sức khỏe (chế độ dinh dưỡng, calo qua Nutritionix API), ngân sách.
-  * Tích hợp Google Places API để lọc các quán ăn chất lượng gần vị trí của người dùng đang thực sự mở cửa.
+| Nhóm | Công cụ |
+|---|---|
+| AI thật | OpenAI GPT-4o-mini hoặc Gemini |
+| Nhà hàng/vị trí | Geoapify Places + Reverse Geocoding |
+| Thời tiết | OpenWeatherMap |
+| Dinh dưỡng | USDA FoodData Central |
+| Backend | FastAPI, Pydantic, HTTPX, SlowAPI |
+| Frontend | HTML, CSS, JavaScript |
+| Kiểm thử | Pytest |
+
+Google Places là tích hợp tùy chọn; luồng chính sử dụng Geoapify để không phụ thuộc Google Billing. Không commit `.env` hoặc API key thật.
+
+## Kiểm thử
+
+```powershell
+cd codebase/ai-food-agent
+pip install -r backend/requirements-dev.txt
+python -m pytest -q
+```
+
+Kết quả gần nhất: **76 tests passed**.
+
+## Tài liệu demo
+
+- [SPEC sản phẩm](spec/spec.md)
+- [Kịch bản demo 5 phút](spec/demo-script.md)
+- [Test cases và bằng chứng kiểm thử](spec/test-cases.md)
+- [Evidence pack Day 5](spec/supporting/evidence-pack.md)

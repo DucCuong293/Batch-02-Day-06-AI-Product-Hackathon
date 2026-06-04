@@ -91,4 +91,4 @@ def make_weather_key(lat: float, lon: float) -> str:
 
 def make_places_key(lat: float, lon: float, keyword: str = "") -> str:
     """Tạo cache key cho places search."""
-    return f"places:{round(lat, 2)}:{round(lon, 2)}:{keyword.lower().strip()}"
+    return f"places:{round(lat, 4)}:{round(lon, 4)}:{keyword.lower().strip()}"

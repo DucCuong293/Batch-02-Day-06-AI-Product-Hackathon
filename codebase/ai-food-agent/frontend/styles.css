@@ -46,6 +46,52 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* ── Light Theme Variables ── */
+html[data-theme="light"] {
+  --bg-primary: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-glass: rgba(0, 0, 0, 0.04);
+  --bg-glass-hover: rgba(0, 0, 0, 0.07);
+  --bg-input: rgba(0, 0, 0, 0.03);
+
+  --accent: #e04a11;
+  --accent-soft: rgba(224, 74, 17, 0.1);
+  --accent-glow: rgba(224, 74, 17, 0.2);
+  --teal: #0f766e;
+  --teal-soft: rgba(15, 118, 110, 0.1);
+  --teal-glow: rgba(15, 118, 110, 0.2);
+  --purple: #6d28d9;
+  --purple-soft: rgba(109, 40, 217, 0.1);
+  --blue: #1d4ed8;
+  --green: #047857;
+  --yellow: #b45309;
+  --red: #b91c1c;
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-active: rgba(224, 74, 17, 0.4);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+html[data-theme="light"] body {
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(224, 74, 17, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(15, 118, 110, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(109, 40, 217, 0.02) 0%, transparent 60%);
+}
+
+html[data-theme="light"] .chat-form {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 button, input, select { font: inherit; color: inherit; }

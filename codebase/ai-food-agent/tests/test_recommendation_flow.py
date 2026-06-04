@@ -312,12 +312,16 @@ def test_process_chat_correction_replaces_visible_suggestions(monkeypatch):
         "Muốn ăn cơm",
         weather_context=FIXED_WEATHER,
         session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
     ))
     previous_items = set(first["session_preferences"]["last_suggested_items"])
     second = asyncio.run(food_agent.process_chat(
         "Đổi món khác đi",
         weather_context=FIXED_WEATHER,
         session_preferences=first["session_preferences"],
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
     ))
 
     assert second["suggestions"]["primary"]["item_name"] not in previous_items
@@ -358,6 +362,8 @@ def test_direct_food_request_survives_llm_omission(monkeypatch):
         "Trời mưa muốn ăn phở dưới 70k",
         weather_context=FIXED_WEATHER,
         session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
     ))
 
     assert "phở" in result["suggestions"]["primary"]["item_name"].lower()
@@ -398,7 +404,106 @@ def test_direct_food_request_skips_unnecessary_llm_clarification(monkeypatch):
         "Muốn ăn phở dưới 70k",
         weather_context=FIXED_WEATHER,
         session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
     ))
 
     assert result["clarification"]["needed"] is False
     assert "phở" in result["suggestions"]["primary"]["item_name"].lower()
+
+
+def test_requested_suggestions_count_sliced(monkeypatch):
+    async def fake_llm(message, context, history, provider, model):
+        return food_agent._fallback_response(message, context)
+
+    async def fake_search(lat, lon, keyword="", radius_km=5, max_results=20):
+        return _open_mock_restaurants()
+
+    async def fake_nutrition(item_name):
+        return {"food_name": item_name, "calories": 400, "source": "mock"}
+
+    monkeypatch.setattr(food_agent, "_call_llm", fake_llm)
+    monkeypatch.setattr(food_agent, "search_restaurants", fake_search)
+    monkeypatch.setattr(food_agent, "get_nutrition", fake_nutrition)
+
+    # Test 3 suggestions requested
+    result_3 = asyncio.run(food_agent.process_chat(
+        "gợi ý cho mình 3 quán ăn gần nhất",
+        weather_context=FIXED_WEATHER,
+        session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
+    ))
+    suggestions_3 = result_3["suggestions"]
+    total_3 = (1 if suggestions_3.get("primary") else 0) + len(suggestions_3.get("backups", []))
+    assert total_3 == 3
+    assert len(suggestions_3["backups"]) == 2
+
+    # Test 1 suggestion requested
+    result_1 = asyncio.run(food_agent.process_chat(
+        "gợi ý 1 quán thôi",
+        weather_context=FIXED_WEATHER,
+        session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
+    ))
+    suggestions_1 = result_1["suggestions"]
+    total_1 = (1 if suggestions_1.get("primary") else 0) + len(suggestions_1.get("backups", []))
+    assert total_1 == 1
+    assert len(suggestions_1["backups"]) == 0
+
+
+def test_distance_query_uses_context_details(monkeypatch):
+    captured_context = []
+
+    async def fake_llm(message, context, history, provider, model):
+        captured_context.append(context)
+        # Mock JSON response
+        return """{
+            "message": "Mình tìm được một số gợi ý cho bạn!",
+            "suggestions_needed": true,
+            "clarification_needed": false,
+            "clarification_options": [],
+            "mood_detected": "bình thường",
+            "cuisine_keywords": ["phở"],
+            "budget": null,
+            "dietary_preference": "normal",
+            "override_tags": []
+        }"""
+
+    async def fake_search(lat, lon, keyword="", radius_km=5, max_results=20):
+        return _open_mock_restaurants()
+
+    async def fake_nutrition(item_name):
+        return {"food_name": item_name, "calories": 400, "source": "mock"}
+
+    monkeypatch.setattr(food_agent, "_call_llm", fake_llm)
+    monkeypatch.setattr(food_agent, "search_restaurants", fake_search)
+    monkeypatch.setattr(food_agent, "get_nutrition", fake_nutrition)
+
+    # First chat turn: get recommendations
+    result_1 = asyncio.run(food_agent.process_chat(
+        "gợi ý 3 quán ăn gần nhất",
+        weather_context=FIXED_WEATHER,
+        session_preferences={},
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
+    ))
+
+    session_preferences = result_1["session_preferences"]
+    assert "last_suggestions_details" in session_preferences
+    assert len(session_preferences["last_suggestions_details"]) > 0
+
+    # Second chat turn: ask a question
+    _ = asyncio.run(food_agent.process_chat(
+        "quán đầu tiên cách chỗ tôi bao xa",
+        weather_context=FIXED_WEATHER,
+        session_preferences=session_preferences,
+        user_lat=USER_LAT,
+        user_lon=USER_LON,
+    ))
+
+    # Verify that captured context in the second turn has the suggestions list
+    second_context = captured_context[1]
+    assert "[QUÁN ĐANG GỢI Ý TRÊN MÀN HÌNH BÊN PHẢI]" in second_context
+    assert "Phở Bò Gia Lâm" in second_context

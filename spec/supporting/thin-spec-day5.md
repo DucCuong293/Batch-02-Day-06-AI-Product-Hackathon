@@ -119,7 +119,7 @@ Owner kiểm thử các path này là Bùi Hoàng Sơn (Tester).
 
 | Thành viên | Việc phụ trách | Bằng chứng cần có trong repo |
 |---|---|---|
-| **Dương Đức Cường** (Leader) | Phân tích & SPEC | Hoàn thiện [evidence-pack-template.md](file:///E:/VinUni/Day06-2A202600794-DuongDucCuong/02-group-spec/evidence-pack-template.md), [synthesis-decide-toolkit.md](file:///E:/VinUni/Day06-2A202600794-DuongDucCuong/02-group-spec/synthesis-decide-toolkit.md), và [thin-spec-template.md](file:///E:/VinUni/Day06-2A202600794-DuongDucCuong/02-group-spec/thin-spec-template.md) |
+| **Dương Đức Cường** (Leader) | Phân tích & SPEC | Hoàn thiện [evidence-pack.md](evidence-pack.md), [synthesis-decide.md](synthesis-decide.md), và [thin-spec-day5.md](thin-spec-day5.md) |
 | **Đinh Hoàng Nam** (Dev) | Prototype Development | Source code của chatbot UI (HTML/CSS/JS) chạy thử nghiệm local, có tích hợp gọi mock/real APIs (Weather, Google Maps, Nutritionix). |
 | **Bùi Hoàng Sơn** (Tester) | Testing & Quality Assurance | File test_cases.md ghi nhận kết quả test 4 paths (Happy, Low-confidence, Failure, Correction) kèm ảnh chụp màn hình chạy test thực tế. |
 | **Ngô Minh Khánh** (Business/UX) | User Feedback & Research | Bản khảo sát nhanh ý kiến user về ý tưởng gợi ý món theo ngữ cảnh + slide pitch giải pháp so với ShopeeFood gốc. |

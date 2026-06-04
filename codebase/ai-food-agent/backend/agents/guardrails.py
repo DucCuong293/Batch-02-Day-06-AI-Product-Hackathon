@@ -5,6 +5,7 @@ Detect prompt injection, out-of-scope, sanitize input, validate history.
 from __future__ import annotations
 
 import re
+import unicodedata
 from logging_config import get_logger
 
 logger = get_logger("guardrails")
@@ -109,8 +110,29 @@ ALLERGY_MENTION_PATTERNS = [
     r"(halal|kosher)",
 ]
 
+LOCATION_REQUIRED_PATTERNS = [
+    r"\bvi tri (hien tai|cua toi|cua minh)\b",
+    r"\b(toi|minh) dang o dau\b",
+    r"\b(gan toi|gan minh|gan day|quanh day|xung quanh day|gan nhat)\b",
+    r"\b(khoang cach|bao xa|cach cho toi|cach cho minh)\b",
+    r"\b(chi duong|dan duong|duong di)\b",
+    r"\b(ship|giao).*(den|toi) (day|cho toi|cho minh)\b",
+]
+
 
 # ── Core functions ───────────────────────────────────
+
+def requires_user_location(message: str) -> bool:
+    """Return True when a request cannot be answered safely without current GPS."""
+    normalized = unicodedata.normalize("NFD", message.lower())
+    normalized = "".join(
+        char for char in normalized
+        if unicodedata.category(char) != "Mn"
+    ).replace("đ", "d")
+    return any(
+        re.search(pattern, normalized, re.IGNORECASE)
+        for pattern in LOCATION_REQUIRED_PATTERNS
+    )
 
 def is_prompt_injection(message: str) -> bool:
     """

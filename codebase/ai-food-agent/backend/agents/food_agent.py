@@ -24,6 +24,7 @@ from agents.guardrails import (
     validate_conversation_history,
     extract_allergies,
     contains_allergy_mention,
+    requires_user_location,
     OUT_OF_SCOPE_RESPONSE,
     INJECTION_BLOCKED_RESPONSE,
 )
@@ -36,6 +37,10 @@ logger = get_logger("food_agent")
 
 # Timeout cho toàn bộ process_chat (giây)
 PROCESS_CHAT_TIMEOUT = 30
+LOCATION_PERMISSION_MESSAGE = (
+    "Yumi chưa nhận được vị trí hiện tại của bạn. Hãy bật quyền Vị trí/Location "
+    "cho trình duyệt, sau đó nhấn vào thanh vị trí phía trên để cập nhật rồi hỏi lại nhé."
+)
 
 
 FOOD_KEYWORDS = [
@@ -69,8 +74,7 @@ async def process_chat(
         "session_preferences": {...}
     }
     """
-    lat = DEFAULT_LAT if user_lat is None else user_lat
-    lon = DEFAULT_LON if user_lon is None else user_lon
+    location_available = user_lat is not None and user_lon is not None
     provider = provider or LLM_PROVIDER
     model = model or LLM_MODEL
     session_preferences = dict(session_preferences or {})
@@ -89,6 +93,13 @@ async def process_chat(
         logger.info(f"Blocked out-of-scope: {message[:100]}")
         return {**OUT_OF_SCOPE_RESPONSE, "session_preferences": session_preferences}
 
+    if not location_available and requires_user_location(message):
+        logger.info("Current location required but GPS coordinates were not provided")
+        return _location_permission_response(weather_context, session_preferences)
+
+    lat = user_lat if location_available else DEFAULT_LAT
+    lon = user_lon if location_available else DEFAULT_LON
+
     # Validate conversation history
     conversation_history = validate_conversation_history(conversation_history or [])
     conversation_history = _sanitize_history(conversation_history, message)
@@ -104,12 +115,54 @@ async def process_chat(
 
     correction = _apply_correction_preferences(message, session_preferences)
 
+    # Determine active mood and if it should be interacted with
+    message_mood = None
+    lower_msg = message.lower()
+    if "stress" in lower_msg or "căng thẳng" in lower_msg:
+        message_mood = "stress"
+    elif "vui" in lower_msg or "hào hứng" in lower_msg or "phấn khích" in lower_msg:
+        message_mood = "vui"
+    elif "mệt" in lower_msg or "oải" in lower_msg or "kiệt sức" in lower_msg:
+        message_mood = "mệt"
+    elif "buồn" in lower_msg or "chán" in lower_msg:
+        message_mood = "buồn"
+    elif "bình thường" in lower_msg or "ổn" in lower_msg:
+        message_mood = "bình thường"
+
+    active_mood = message_mood or session_preferences.get("mood") or "bình thường"
+
+    # Initialize interacted_moods list if not present
+    if "interacted_moods" not in session_preferences:
+        session_preferences["interacted_moods"] = []
+
+    should_interact_mood = False
+    if active_mood not in session_preferences["interacted_moods"]:
+        should_interact_mood = True
+        session_preferences["interacted_moods"].append(active_mood)
+
+    # Save the mood to session_preferences immediately
+    session_preferences["mood"] = active_mood
+
     # ── 1. Get weather context ───────────────────────
     if weather_context is None:
         weather_context = await get_weather(lat, lon)
 
+    # ── 1b. Get user location address ────────────────
+    from services.maps import reverse_geocode
+    user_address = await reverse_geocode(lat, lon) if location_available else ""
+
     # ── 2. Build context for LLM ─────────────────────
-    context_block = _build_context_block(weather_context, session_preferences)
+    context_block = _build_context_block(
+        weather_context,
+        session_preferences,
+        active_mood,
+        should_interact_mood,
+        user_address,
+        lat,
+        lon,
+        location_available,
+    )
+    logger.info(f"Context Block sent to LLM:\n{context_block}")
     if correction["is_correction"]:
         context_block += f"\n\n[HƯỚNG DẪN CORRECTION]\n{CORRECTION_PROMPT}"
 
@@ -155,7 +208,12 @@ async def process_chat(
 
     # ── 5. Update session preferences ────────────────
     if parsed.get("mood_detected") and parsed["mood_detected"] != "không rõ":
-        session_preferences["mood"] = parsed["mood_detected"]
+        new_mood = parsed["mood_detected"]
+        session_preferences["mood"] = new_mood
+        if new_mood not in session_preferences.get("interacted_moods", []):
+            if "interacted_moods" not in session_preferences:
+                session_preferences["interacted_moods"] = []
+            session_preferences["interacted_moods"].append(new_mood)
     if parsed.get("budget"):
         session_preferences["budget"] = parsed["budget"]
     if parsed.get("dietary_preference") and parsed["dietary_preference"] != "normal":
@@ -180,6 +238,14 @@ async def process_chat(
     # ── 7. If suggestions needed → run scoring ───────
     suggestions = []
     if parsed.get("suggestions_needed", True):
+        if not location_available:
+            logger.info("Restaurant suggestions require current GPS coordinates")
+            return _location_permission_response(
+                weather_context,
+                session_preferences,
+                parsed.get("mood_detected", "bình thường"),
+            )
+
         dietary = parsed.get("dietary_preference", "normal")
         if dietary == "normal":
             dietary = session_preferences.get("dietary", "normal")
@@ -200,6 +266,13 @@ async def process_chat(
             rejected_restaurants=session_preferences.get("rejected_restaurants", []),
             allergy_keywords=session_preferences.get("allergies", []),
         )
+        # Giới hạn số lượng gợi ý nếu người dùng yêu cầu cụ thể số lượng
+        requested_count = _extract_requested_count(message)
+        if requested_count is not None and requested_count > 0:
+            needed_backups = max(0, requested_count - 1)
+            if "backups" in suggestions:
+                suggestions["backups"] = suggestions["backups"][:needed_backups]
+
         _remember_suggestions(session_preferences, suggestions, parsed_keywords)
         if not suggestions.get("primary"):
             parsed["message"] = (
@@ -214,6 +287,22 @@ async def process_chat(
         "weather": weather_context,
         "mood_detected": parsed.get("mood_detected", "bình thường"),
         "session_preferences": session_preferences,
+    }
+
+
+def _location_permission_response(
+    weather: dict | None,
+    session_preferences: dict,
+    mood_detected: str = "bình thường",
+) -> dict:
+    return {
+        "reply": LOCATION_PERMISSION_MESSAGE,
+        "suggestions": {},
+        "clarification": {"needed": False, "options": []},
+        "weather": weather or {},
+        "mood_detected": mood_detected,
+        "session_preferences": session_preferences,
+        "location_required": True,
     }
 
 
@@ -322,17 +411,56 @@ def _remember_suggestions(preferences: dict, suggestions: dict, keywords: list[s
         item["restaurant_name"] for item in visible if item.get("restaurant_name")
     ))
     preferences["last_cuisine_keywords"] = keywords
+    preferences["last_suggestions_details"] = [
+        {
+            "name": item["restaurant_name"],
+            "address": item.get("restaurant_address", "N/A"),
+            "item": item["item_name"],
+            "price": item["item_price"],
+            "distance": item["distance_km"],
+        }
+        for item in visible
+    ]
 
 
-def _build_context_block(weather: dict, prefs: dict) -> str:
+def _build_context_block(
+    weather: dict,
+    prefs: dict,
+    active_mood: str,
+    should_interact_mood: bool,
+    user_address: str,
+    lat: float,
+    lon: float,
+    location_available: bool = True,
+) -> str:
     """Build context string cho LLM."""
     now = datetime.now()
+    location_context = (
+        f"Vị trí hiện tại của người dùng: {user_address} (Tọa độ: {lat:.4f}, {lon:.4f})"
+        if location_available
+        else "Vị trí hiện tại của người dùng: chưa được cấp quyền; không được coi tọa độ mặc định là vị trí người dùng."
+    )
+    weather_context = (
+        f"Thời tiết: {weather.get('context_summary', 'N/A')}"
+        if location_available
+        else f"Thời tiết tham khảo: {weather.get('context_summary', 'N/A')} (chưa có GPS hiện tại)"
+    )
     parts = [
         f"Thời gian: {now.strftime('%H:%M ngày %d/%m/%Y')} — Bữa {weather.get('meal_period', 'N/A')}",
-        f"Thời tiết: {weather.get('context_summary', 'N/A')}",
+        weather_context,
+        location_context,
     ]
-    if prefs.get("mood"):
-        parts.append(f"Mood đã chọn: {prefs['mood']}")
+    if should_interact_mood:
+        parts.append(
+            f"Tâm trạng hiện tại: {active_mood} (YÊU CẦU: Đây là lần đầu tiên tâm trạng này xuất hiện hoặc được chọn. "
+            f"Bạn PHẢI chào hỏi, hỏi thăm hoặc tương tác, đồng cảm khéo léo với tâm trạng này ở câu mở đầu của bạn một cách thân thiện)."
+        )
+    else:
+        parts.append(
+            f"Tâm trạng hiện tại: {active_mood} (YÊU CẦU: Bạn ĐÃ tương tác/đồng cảm với tâm trạng này ở các câu trước rồi. "
+            f"Tuyệt đối KHÔNG nhắc lại, đồng cảm hay hỏi thăm về tâm trạng này nữa để tránh lặp đi lặp lại làm khách hàng khó chịu. Chỉ tập trung gợi ý món ăn)."
+        )
+
     if prefs.get("budget"):
         parts.append(f"Budget đã nói: {prefs['budget']:,}đ")
     if prefs.get("dietary"):
@@ -343,6 +471,13 @@ def _build_context_block(weather: dict, prefs: dict) -> str:
         parts.append(
             f"Quán đã từ chối: {', '.join(_ensure_string_list(prefs['rejected_restaurants']))}"
         )
+    if prefs.get("last_suggestions_details"):
+        parts.append("\n[QUÁN ĐANG GỢI Ý TRÊN MÀN HÌNH BÊN PHẢI]:")
+        for idx, item in enumerate(prefs["last_suggestions_details"], 1):
+            parts.append(
+                f"{idx}. Quán: {item['name']} - Địa chỉ: {item['address']} - "
+                f"Món đề xuất: {item['item']} - Giá: {item['price']:,}đ - Khoảng cách: {item['distance']} km"
+            )
 
     return "\n".join(parts)
 
@@ -738,3 +873,19 @@ def _deduplicate_restaurants(restaurants: list[dict]) -> list[dict]:
             unique.append(restaurant)
             seen.add(key)
     return unique
+
+
+def _extract_requested_count(message: str) -> int | None:
+    """Trích xuất số lượng gợi ý mà người dùng yêu cầu (ví dụ: 'gợi ý 3 quán', 'top 2')."""
+    message_lower = message.lower()
+    # Khớp: "3 quán", "3 món", "3 lựa chọn", "3 gợi ý"
+    match = re.search(r'\b(\d+)\s*(quán|món|lựa chọn|gợi ý)\b', message_lower)
+    if match:
+        return int(match.group(1))
+
+    # Khớp: "gợi ý 3", "lấy 3", "cho 3"
+    match_verb = re.search(r'\b(gợi ý|lấy|cho|chọn|tìm)\s+(\d+)\b', message_lower)
+    if match_verb:
+        return int(match_verb.group(2))
+
+    return None

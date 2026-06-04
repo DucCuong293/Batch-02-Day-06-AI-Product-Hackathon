@@ -10,7 +10,7 @@ const state = {
   weatherContext: null,
   currentMood: null,
   lastSuggestions: null,
-  location: { lat: null, lon: null, source: "default" },
+  location: { lat: null, lon: null, source: "unavailable" },
   isLoading: false,
 };
 
@@ -26,6 +26,7 @@ const els = {
   chatInput: $("#chat-input"),
   btnSend: $("#btn-send"),
   btnReset: $("#btn-reset"),
+  btnTheme: $("#btn-theme"),
   ctxWeather: $("#ctx-weather"),
   ctxTime: $("#ctx-time"),
   ctxLocation: $("#ctx-location"),
@@ -47,6 +48,16 @@ function showToast(msg, duration = 2500) {
   setTimeout(() => els.toast.classList.remove("show"), duration);
 }
 
+function setTheme(theme) {
+  state.theme = theme;
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("yumi-theme", theme);
+  if (els.btnTheme) {
+    els.btnTheme.textContent = theme === "light" ? "🌙" : "☀️";
+    els.btnTheme.title = theme === "light" ? "Chuyển sang chế độ tối" : "Chuyển sang chế độ sáng";
+  }
+}
+
 function persistState() {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -54,7 +65,6 @@ function persistState() {
       sessionPreferences: state.sessionPreferences,
       currentMood: state.currentMood,
       lastSuggestions: state.lastSuggestions,
-      location: state.location,
     }));
   } catch (err) {
     console.warn("Could not persist Yumi session:", err);
@@ -69,7 +79,6 @@ function restoreState() {
     state.sessionPreferences = saved.sessionPreferences || {};
     state.currentMood = saved.currentMood || null;
     state.lastSuggestions = saved.lastSuggestions || null;
-    state.location = saved.location || state.location;
     return state.conversationHistory.length > 0 || Boolean(state.lastSuggestions);
   } catch (err) {
     console.warn("Could not restore Yumi session:", err);
@@ -136,10 +145,13 @@ function updateLocationLabel(label) {
 
 async function requestCurrentLocation(showFeedback = false) {
   if (!navigator.geolocation) {
+    state.location = { lat: null, lon: null, source: "unavailable" };
+    updateLocationLabel("Chưa bật vị trí — nhấn để cấp quyền");
     if (showFeedback) showToast("Trình duyệt không hỗ trợ định vị.");
     return false;
   }
 
+  state.location = { lat: null, lon: null, source: "pending" };
   updateLocationLabel("Đang xác định vị trí...");
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
@@ -157,11 +169,12 @@ async function requestCurrentLocation(showFeedback = false) {
         resolve(true);
       },
       () => {
-        state.location = { lat: null, lon: null, source: "default" };
-        if (showFeedback) showToast("Không lấy được GPS, Yumi dùng vị trí mặc định.");
+        state.location = { lat: null, lon: null, source: "unavailable" };
+        updateLocationLabel("Chưa bật vị trí — nhấn để cấp quyền");
+        if (showFeedback) showToast("Hãy bật quyền Vị trí/Location cho trình duyệt rồi thử lại.");
         resolve(false);
       },
-      { enableHighAccuracy: false, timeout: 6000, maximumAge: 10 * 60 * 1000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   });
 }
@@ -179,17 +192,13 @@ async function fetchContext() {
     const data = await resp.json();
     state.weatherContext = data.weather;
 
-    const latStr = (state.location.lat !== null ? state.location.lat : data.location.lat).toFixed(4);
-    const lonStr = (state.location.lon !== null ? state.location.lon : data.location.lon).toFixed(4);
-    if (state.location.source !== "gps") {
-      state.location = {
-        lat: data.location.lat,
-        lon: data.location.lon,
-        source: "default",
-      };
-      updateLocationLabel(`${data.location.city} (${latStr}, ${lonStr}) (mặc định)`);
-    } else {
+    if (data.location.available) {
+      const latStr = data.location.lat.toFixed(4);
+      const lonStr = data.location.lon.toFixed(4);
       updateLocationLabel(`${data.location.city} (${latStr}, ${lonStr})`);
+    } else {
+      state.location = { lat: null, lon: null, source: "unavailable" };
+      updateLocationLabel("Chưa bật vị trí — nhấn để cấp quyền");
     }
 
     // Update context bar
@@ -200,6 +209,9 @@ async function fetchContext() {
 
     if (w.is_mock) {
       els.ctxWeather.querySelector(".ctx-text").textContent += " (demo)";
+    }
+    if (!data.location.available) {
+      els.ctxWeather.querySelector(".ctx-text").textContent += " (tham khảo)";
     }
     persistState();
   } catch (err) {
@@ -254,6 +266,11 @@ async function sendChat(message) {
     }
 
     const cleanReply = cleanAIReply(data.reply);
+
+    if (data.location_required) {
+      updateLocationLabel("Chưa bật vị trí — nhấn để cấp quyền");
+      showToast("Bật quyền vị trí rồi nhấn thanh vị trí để Yumi cập nhật.", 4000);
+    }
 
     // Handle clarification
     if (data.clarification && data.clarification.needed) {
@@ -565,6 +582,13 @@ els.chatForm.addEventListener("submit", (e) => {
 // Reset button
 els.btnReset.addEventListener("click", resetConversation);
 
+// Theme toggle button
+if (els.btnTheme) {
+  els.btnTheme.addEventListener("click", () => {
+    setTheme(state.theme === "light" ? "dark" : "light");
+  });
+}
+
 // Location chip: allow the user to retry GPS explicitly.
 els.ctxLocation.addEventListener("click", async () => {
   await requestCurrentLocation(true);
@@ -575,8 +599,22 @@ els.ctxLocation.addEventListener("click", async () => {
 $$(".mood-chip").forEach((chip) => {
   chip.addEventListener("click", () => {
     const mood = chip.dataset.mood;
+    const oldMood = state.currentMood;
     setMoodActive(mood);
     showToast(`Tâm trạng: ${chip.textContent}`);
+
+    // Chỉ gửi tin nhắn chat nếu tâm trạng thực sự thay đổi để tránh spam
+    if (mood !== oldMood) {
+      const moodTextMap = {
+        vui: "Hôm nay mình đang thấy rất vui vẻ!",
+        "mệt": "Hôm nay mình thấy hơi mệt mỏi...",
+        "buồn": "Hôm nay mình thấy hơi buồn...",
+        "stress": "Hôm nay mình đang bị stress quá!",
+        "bình thường": "Hôm nay tâm trạng mình bình thường."
+      };
+      const text = moodTextMap[mood] || `Hôm nay tâm trạng mình là ${mood}`;
+      sendChat(text);
+    }
   });
 });
 
@@ -611,18 +649,16 @@ document.addEventListener("click", (e) => {
 
 // ── Init ───────────────────────────────────────────
 (async function init() {
+  // Khởi tạo theme
+  const savedTheme = localStorage.getItem("yumi-theme") || "dark";
+  setTheme(savedTheme);
+
   const restored = restoreState();
   updateTime();
   setInterval(updateTime, 30000);
 
   updateModelDropdown();
-  if (state.location.source === "gps") {
-    updateLocationLabel(
-      `Vị trí hiện tại (${state.location.lat.toFixed(4)}, ${state.location.lon.toFixed(4)})`
-    );
-  } else {
-    await requestCurrentLocation(false);
-  }
+  await requestCurrentLocation(false);
   await fetchContext();
   if (restored) {
     renderRestoredConversation();

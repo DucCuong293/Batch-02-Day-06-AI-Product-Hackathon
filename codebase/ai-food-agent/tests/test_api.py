@@ -59,3 +59,38 @@ def test_chat_endpoint_runs_full_mock_recommendation_flow(monkeypatch):
     body = response.json()
     assert "phở" in body["suggestions"]["primary"]["item_name"].lower()
     assert body["suggestions"]["primary"]["requested_keyword_match"] is True
+
+
+def test_context_without_gps_does_not_return_default_as_user_location(monkeypatch):
+    async def fake_weather(lat, lon):
+        return WEATHER
+
+    async def fail_reverse_geocode(lat, lon):
+        raise AssertionError("Reverse geocoding must not run without user GPS")
+
+    monkeypatch.setattr(main, "get_weather", fake_weather)
+    monkeypatch.setattr(main, "reverse_geocode", fail_reverse_geocode)
+
+    response = TestClient(main.app).get("/api/context")
+
+    assert response.status_code == 200
+    location = response.json()["location"]
+    assert location == {
+        "available": False,
+        "lat": None,
+        "lon": None,
+        "city": None,
+    }
+
+
+def test_chat_location_question_without_gps_requests_permission():
+    response = TestClient(main.app).post("/api/chat", json={
+        "message": "Quán nào gần tôi nhất?",
+        "weather_context": WEATHER,
+    })
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["location_required"] is True
+    assert "bật quyền" in body["reply"].lower()
+    assert body["suggestions"] == {}

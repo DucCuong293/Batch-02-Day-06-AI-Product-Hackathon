@@ -2,7 +2,7 @@
 AI Food Agent — FastAPI Backend
 Endpoints cho chat, weather, và context.
 """
-from __future__ import annotations
+
 
 import os
 import sys
@@ -29,7 +29,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from config import DEFAULT_LAT, DEFAULT_LON, DEFAULT_CITY, LLM_PROVIDER, LLM_MODEL
+from config import DEFAULT_LAT, DEFAULT_LON, LLM_PROVIDER, LLM_MODEL
 from services.weather import get_weather
 from services.maps import reverse_geocode
 from agents.food_agent import process_chat
@@ -110,6 +110,7 @@ class ChatResponse(BaseModel):
     weather: dict = Field(default_factory=dict)
     mood_detected: str = "bình thường"
     session_preferences: dict = Field(default_factory=dict)
+    location_required: bool = False
 
 
 # ── Safe error message ───────────────────────────────
@@ -148,13 +149,25 @@ async def api_weather(request: Request, lat: float = DEFAULT_LAT, lon: float = D
 
 @app.get("/api/context")
 @limiter.limit("60/minute")
-async def api_context(request: Request, lat: float = DEFAULT_LAT, lon: float = DEFAULT_LON):
+async def api_context(
+    request: Request,
+    lat: float | None = None,
+    lon: float | None = None,
+):
     """Lấy context tổng hợp (thời tiết + thời gian + gợi ý)."""
-    weather = await get_weather(lat, lon)
-    address = await reverse_geocode(lat, lon)
+    location_available = lat is not None and lon is not None
+    weather_lat = lat if location_available else DEFAULT_LAT
+    weather_lon = lon if location_available else DEFAULT_LON
+    weather = await get_weather(weather_lat, weather_lon)
+    address = await reverse_geocode(lat, lon) if location_available else None
     return {
         "weather": weather,
-        "location": {"lat": lat, "lon": lon, "city": address or DEFAULT_CITY},
+        "location": {
+            "available": location_available,
+            "lat": lat if location_available else None,
+            "lon": lon if location_available else None,
+            "city": address if location_available else None,
+        },
         "defaults": {
             "provider": LLM_PROVIDER,
             "model": LLM_MODEL,

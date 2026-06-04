@@ -1,5 +1,9 @@
 # Yumi - AI Food Agent
 
+**Lớp:** E402
+
+**Nhóm:** A5
+
 **Track:** Food & Local Delivery
 
 **App tham khảo:** ShopeeFood

@@ -1,5 +1,8 @@
 # Yumi - Product SPEC
 
+**Lớp:** E402  
+**Nhóm:** A5
+
 ## 1. Vấn đề, người dùng và bằng chứng
 
 **Người dùng chính:** sinh viên và dân văn phòng trẻ tại Hà Nội thường xuyên dùng ứng dụng giao đồ ăn, hay phân vân "ăn gì?", quan tâm budget, sức khỏe và thời gian giao.
